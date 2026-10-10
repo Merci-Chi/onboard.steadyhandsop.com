@@ -363,3 +363,17 @@
     box-shadow: 0 0 0 3px #e3f7eb, 0 2px 7px rgba(13, 105, 57, .22);
   }
 }
+
+/* Compact five-field personal information step */
+#step-content .field-grid select{width:100%;min-height:48px;background:#fff;color:#183659;border:1px solid #cfdaea;border-radius:12px;padding:12px 14px}
+#step-content .field-grid select:disabled{opacity:.65}
+
+/* Five-step responsive onboarding progress and weekly schedule selection */
+.onboard-body .progress-overview .steps { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.schedule-options { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0 12px; }
+.schedule-choice { display:flex;align-items:center;gap:12px;padding:18px;border:1px solid #d9e5f3;border-radius:14px;background:#fff;color:#173459;cursor:pointer; }
+.schedule-choice:has(input:checked){background:#f0f8ff;border-color:#286eb4;box-shadow:0 0 0 1px #286eb4;}
+.schedule-choice input{accent-color:#17498f;flex-shrink:0;}
+.schedule-choice span{display:grid;gap:5px;}
+.schedule-choice small{font-size:12px;color:#647c9b;line-height:1.4;}
+@media(max-width:680px){.onboard-body .progress-overview .steps{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;}.onboard-body .progress-overview .step-item{padding:0 1px;}.onboard-body .progress-overview .step-item::after{display:none;}.onboard-body .progress-overview .step-text{font-size:10px;overflow-wrap:anywhere;}.schedule-options{grid-template-columns:1fr;}}

@@ -1,0 +1,1 @@
+Updated Step 2: full legal name, account-prefilled email, phone, state of residence, and available-position dropdown. Existing DOB/address/city/ZIP entries in previously saved account metadata are preserved but no longer requested or required. Payroll/legal information may still need secure collection separately. Replace onboarding.js and styles.css (or upload the full site).
