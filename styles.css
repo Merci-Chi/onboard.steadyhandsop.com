@@ -249,3 +249,32 @@
 .onboard-forgot{display:block;margin:13px auto 0;color:#52657c;font-size:14px;text-decoration:underline;text-underline-offset:3px}
 .onboard-login-foot{font-weight:800;color:#98a9bf;margin-top:20px;display:flex;align-items:center;gap:13px}
 .onboard-login-foot::before,.onboard-login-foot::after{content:"";height:1px;background:#dbe3eb;flex:1}
+
+/* Four-step onboarding success dialog and standalone training center */
+.success-dialog{max-width:480px;width:calc(100% - 32px);border:0;border-radius:24px;padding:0;box-shadow:0 24px 70px #061a3980;color:#183859}
+.success-dialog::backdrop,.video-dialog::backdrop{background:#07182dbb;backdrop-filter:blur(4px)}
+.success-inner{padding:40px 30px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.success-inner h2{font-size:30px;margin:0;color:#112e52}.success-inner p{margin:0;color:#47617e;line-height:1.6}
+.success-icon{background:#e3f4fd;color:#1276af;width:76px;height:76px;display:grid;place-items:center;border-radius:50%;font-size:45px;font-weight:700}
+.success-inner button{width:100%;max-width:340px}
+.training-body{background:linear-gradient(160deg,#edf5ff,#f8fbff);min-height:100vh;color:#142f51}
+.training-page{max-width:1180px;margin:36px auto;padding:0 22px 80px}.training-loading{text-align:center;padding:70px;color:#456482}
+.training-hero{border-radius:24px;background:white;border:1px solid #d6e5f6;padding:35px;margin-bottom:25px;box-shadow:0 6px 30px #183f6210}
+.training-hero h1{font-size:clamp(28px,4vw,40px);margin:12px 0;color:#112f54}.training-hero p{color:#4e6580;margin:0 0 26px;line-height:1.6}
+.training-progress-line{display:flex;justify-content:space-between;gap:15px;margin-bottom:12px;color:#194b83;font-weight:700}
+.training-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:19px}
+.training-lesson{padding:12px;border-radius:19px;background:#fff;text-align:left;border:1px solid #d9e7f6;cursor:pointer;box-shadow:0 5px 20px #183f6212;color:inherit;transition:transform .18s,border-color .18s}
+.training-lesson:hover,.training-lesson:focus-visible{border-color:#2184e3;transform:translateY(-2px)}
+.lesson-art{position:relative;background:radial-gradient(circle at 28% 12%,#205286,#091f3b 75%);border-radius:12px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.lesson-art:after{content:'';position:absolute;width:110%;height:30%;left:-5%;bottom:-16%;border-top:12px solid #1879e5;transform:rotate(-7deg);border-radius:50%}
+.lesson-icon{font-size:62px;color:#a4c6eb;opacity:.65}.lesson-play{position:absolute;color:white;background:#061e3bbb;border:2px solid #ffffffb0;width:55px;height:55px;border-radius:50%;display:grid;place-items:center;font-size:22px;padding-left:3px;z-index:2}
+.lesson-number{position:absolute;top:12px;left:12px;color:white;background:#1070c9;padding:5px 10px;border-radius:8px;font-weight:800}
+.lesson-meta{padding:15px 5px 8px}.lesson-meta strong{font-size:17px;display:block}.lesson-meta p{color:#576d85;font-size:14px;line-height:1.45;min-height:42px;margin:8px 0}.lesson-done{color:#166db3;font-weight:700;font-size:13px}.lesson-done.finished{color:#178170}
+.training-footnote{font-size:13px;color:#55708a;margin:28px 0}
+.video-dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:0;border:0;border-radius:20px;background:#0d2544;color:white;box-shadow:0 22px 75px #05142b88}
+.video-dialog-content{padding:22px}.video-dialog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:16px}.video-dialog-heading small{color:#9ac6f4;letter-spacing:2px;font-weight:700}.video-dialog-heading h2{color:#fff;font-size:23px;margin:7px 0 0}
+.video-close{font-size:28px;color:#fff;border:1px solid #44617f;background:transparent;border-radius:10px;width:40px;height:40px;cursor:pointer}
+#training-player{display:block;width:100%;max-height:58vh;background:#05182d;border-radius:12px;aspect-ratio:16/9;object-fit:contain}#training-player[hidden]{display:none}
+.missing-video{background:#132f50;color:#dbeaff;padding:65px 15px;text-align:center;border-radius:12px}.missing-video[hidden]{display:none}
+#video-description{color:#d8e6f7;line-height:1.5}.video-footer{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:20px}.video-footer button:disabled{opacity:.4;cursor:default}
+@media(max-width:900px){.training-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.training-grid{grid-template-columns:1fr}.training-page{padding:0 14px 45px;margin-top:20px}.training-hero{padding:24px}.video-dialog-content{padding:14px}.video-footer button{flex:1 1 auto}}
