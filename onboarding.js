@@ -9,7 +9,7 @@ let state={name:'',dob:'',phone:'',email:'',address:'',city:'',country:'',region
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const field=(label,id,type='text',value='',attrs='')=>`<label for="${id}"><span class="field-label-text">${esc(label.replace(/\s*\*$/, ''))}${attrs.includes('required')?' <span class="required-star" aria-label="required">*</span>':''}</span><input id="${id}" type="${type}" value="${esc(value)}" ${attrs}></label>`;
 const paymentDetailLabel=method=>({zelle:'Zelle email or phone',applepay:'Apple Pay phone number',cashapp:'Cash App $Cashtag',paypal:'PayPal email',other:'Preferred payment method'})[method]||'Payment details';
-const paymentPlaceholder=method=>({zelle:'Email or phone number',applepay:'Phone number (including country code if applicable)',cashapp:'$YourCashtag',paypal:'you@example.com',other:'Specify your preference'})[method]||'';
+const paymentPlaceholder=method=>({zelle:'Email or phone number',applepay:'+1(000)000-0000',cashapp:'$YourCashtag',paypal:'you@example.com',other:'Specify your preference'})[method]||'';
 // Keep onboarding narration and tutorial videos mutually exclusive.
 // Capture 'play' so this also applies to any additional videos added later.
 document.addEventListener('play', event => {
@@ -24,18 +24,20 @@ const mark=html=>{
  document.querySelectorAll('#step-content audio, #step-content video').forEach(media=>media.pause());
  $('#step-content').innerHTML=html;
 };
-// Format ten-digit local numbers, optional 1–5-digit country calling codes,
-// and optional extensions (for example: +12(345)678-9012 ext 45).
+// Format US-style local numbers and optional international calling prefixes.
+// The placeholder remains +1(000)000-0000 for every phone-only field.
 function phoneParts(raw){
- const text=String(raw||'');
+ const text=String(raw||'').trim();
  const match=text.match(/(?:\s|^)(?:ext(?:ension)?\.?|x|#)\s*(\d{0,8})\s*$/i);
  const extension=match?match[1]:null;
  const main=(match?text.slice(0,match.index):text).replace(/\D/g,'').slice(0,15);
- return {main,extension};
+ return {main,extension,international:text.startsWith('+')};
 }
 function formatPhone(raw){
- const {main,extension}=phoneParts(raw);
+ const {main,extension,international}=phoneParts(raw);
  if(!main)return '';
+ // Preserve explicit international entry while the caller is still typing.
+ if(international&&main.length<=10)return '+'+main;
  const prefix=main.length>10?main.slice(0,-10):'';
  const local=main.length>10?main.slice(-10):main;
  let value=prefix?'+'+prefix:'';
@@ -46,26 +48,34 @@ function formatPhone(raw){
  return value;
 }
 function validPhone(raw){
- const formatted=formatPhone(raw);
- return /^\+?\d{0,5}\(\d{3}\)\d{3}-\d{4}(?: ext \d{1,8})?$/.test(formatted);
+ const digits=phoneParts(raw).main;
+ // Ten digits locally or 11–15 digits with a clearly specified international prefix.
+ return digits.length===10 || (String(raw||'').trim().startsWith('+')&&digits.length>=11&&digits.length<=15);
 }
 function attachPhoneFormat(){
- for(const id of ['phone','emergency-phone']){
+ const method=state.paymentMethod;
+ const detail=$('#payment-detail');
+ // Zelle accepts either an email address or a phone number; Apple Pay takes a phone.
+ const phoneInputs=['phone','emergency-phone'];
+ if(detail&&(method==='applepay'||method==='zelle'))phoneInputs.push('payment-detail');
+ for(const id of phoneInputs){
   const el=$('#'+id);if(!el)continue;
-  el.setAttribute('inputmode','tel');
-  el.setAttribute('placeholder','+1(000)000-0000');
+  const mixed=id==='payment-detail'&&method==='zelle';
+  if(!mixed)el.setAttribute('type','tel');
+  el.setAttribute('inputmode',mixed?'text':'tel');
+  el.setAttribute('placeholder',mixed?'Email or +1(000)000-0000':'+1(000)000-0000');
   el.setAttribute('maxlength','45');
-  el.value=formatPhone(el.value);
+  if(!mixed||(!el.value.includes('@')&&/[0-9+]/.test(el.value)))el.value=formatPhone(el.value);
   el.addEventListener('input',()=>{
-   const before=el.value,position=el.selectionStart??before.length;
-   const preceding=before.slice(0,position).replace(/\d/g,'').length;
+   const before=el.value;
+   if(mixed&&(before.includes('@')||/[a-z]/i.test(before.replace(/(?:ext(?:ension)?\.?|x)\s*\d*$/i,''))))return;
+   const position=el.selectionStart??before.length;
    const digitsBefore=before.slice(0,position).replace(/\D/g,'').length;
    const formatted=formatPhone(before);el.value=formatted;
    if(document.activeElement===el){
     let caret=formatted.length,seen=0;
     if(digitsBefore===0)caret=formatted.startsWith('+')?1:formatted.startsWith('(')?1:0;
     else for(let i=0;i<formatted.length;i++)if(/\d/.test(formatted[i])&&++seen===digitsBefore){caret=i+1;break}
-    if(/(?:ext(?:ension)?\.?|x|#)/i.test(before.slice(0,position)) && / ext/.test(formatted) && position>before.toLowerCase().indexOf('ext'))caret=Math.max(caret,formatted.indexOf(' ext')+4);
     el.setSelectionRange(caret,caret);
    }
   });
