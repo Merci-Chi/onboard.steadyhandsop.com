@@ -377,3 +377,14 @@
 .schedule-choice span{display:grid;gap:5px;}
 .schedule-choice small{font-size:12px;color:#647c9b;line-height:1.4;}
 @media(max-width:680px){.onboard-body .progress-overview .steps{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;}.onboard-body .progress-overview .step-item{padding:0 1px;}.onboard-body .progress-overview .step-item::after{display:none;}.onboard-body .progress-overview .step-text{font-size:10px;overflow-wrap:anywhere;}.schedule-options{grid-template-columns:1fr;}}
+
+/* Residence text inputs and original selectable position cards */
+#step-content #country,#step-content #region{width:100%;min-height:48px;border:1px solid #cfdaea;border-radius:12px;background:#fff;color:#183659;padding:12px 14px;font:inherit}
+#step-content #country:focus,#step-content #region:focus{outline:2px solid #8abcf1;outline-offset:1px}
+#step-content .role-group{margin-top:24px}
+#step-content .role-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#step-content .role-choice{min-height:72px;align-items:center;background:#fff;transition:background .15s,border-color .15s,box-shadow .15s}
+#step-content .role-choice:has(input:checked),#step-content .role-choice.selected{border-color:#236ec0;background:#eef6ff;box-shadow:0 0 0 1px #236ec0}
+#step-content .role-choice.is-full{background:#f5f7fa;opacity:.7}
+#step-content .role-choice input{flex:none}
+@media(max-width:600px){#step-content .role-options{grid-template-columns:1fr}}
