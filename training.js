@@ -15,13 +15,13 @@ function render(){
  $('#training-status').textContent=`${done} of ${lessons.length} lessons completed`;
  $('#training-percent').textContent=Math.round(done/lessons.length*100)+'%';
  $('#training-fill').style.width=done/lessons.length*100+'%';
- $('#training-grid').innerHTML=lessons.map((lesson,i)=>`<button class="training-lesson" type="button" data-lesson="${i}"><div class="lesson-art"><span class="lesson-icon">${escapeHtml(lesson.icon)}</span><span class="lesson-play">▶</span><span class="lesson-number">${String(i+1).padStart(2,'0')}</span></div><div class="lesson-meta"><strong>${escapeHtml(lesson.title)}</strong><p>${escapeHtml(lesson.description)}</p><span class="lesson-done ${completed.has(i)?'finished':''}">${completed.has(i)?'✓ Completed':'Watch video →'}</span></div></button>`).join('');
+ $('#training-grid').innerHTML=lessons.map((lesson,i)=>`<button class="training-lesson" type="button" data-lesson="${i}"><div class="lesson-art"><span class="lesson-icon">${escapeHtml(lesson.icon)}</span><span class="lesson-play">▶</span><span class="lesson-number">${String(i).padStart(2,'0')}</span></div><div class="lesson-meta"><strong>${escapeHtml(lesson.title)}</strong><p>${escapeHtml(lesson.description)}</p><span class="lesson-done ${completed.has(i)?'finished':''}">${completed.has(i)?'✓ Completed':'Watch video →'}</span></div></button>`).join('');
  $('#training-grid').querySelectorAll('[data-lesson]').forEach(b=>b.addEventListener('click',()=>openLesson(Number(b.dataset.lesson))));
 }
 async function openLesson(i){
  activeIndex=i;
  const player=$('#training-player');player.pause();player.removeAttribute('src');player.load();
- const lesson=lessons[i];$('#video-number').textContent=`LESSON ${String(i+1).padStart(2,'0')} OF 06`;
+ const lesson=lessons[i];$('#video-number').textContent=`LESSON ${String(i).padStart(2,'0')} OF 06`;
  $('#video-title').textContent=lesson.title;$('#video-description').textContent=lesson.description;
  $('#video-previous').disabled=i===0;$('#video-next').disabled=i===lessons.length-1;
  $('#video-complete').textContent=completed.has(i)?'✓ Completed':'Mark as completed ✓';
