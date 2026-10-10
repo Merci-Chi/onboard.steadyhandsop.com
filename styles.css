@@ -278,3 +278,88 @@
 .missing-video{background:#132f50;color:#dbeaff;padding:65px 15px;text-align:center;border-radius:12px}.missing-video[hidden]{display:none}
 #video-description{color:#d8e6f7;line-height:1.5}.video-footer{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:20px}.video-footer button:disabled{opacity:.4;cursor:default}
 @media(max-width:900px){.training-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.training-grid{grid-template-columns:1fr}.training-page{padding:0 14px 45px;margin-top:20px}.training-hero{padding:24px}.video-dialog-content{padding:14px}.video-footer button{flex:1 1 auto}}
+
+
+/* 2026-10-10: Compact four-step onboarding progress (layout only). */
+.onboard-body .progress-overview {
+  padding: 17px 25px 16px;
+  margin-bottom: 16px;
+  border-radius: 19px;
+}
+.onboard-body .progress-overview .meter-label {
+  margin: 0 0 9px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.onboard-body .progress-overview .meter-label b { font-size: 14px; }
+.onboard-body .progress-overview .progress-track { height: 7px; }
+.onboard-body .progress-overview .steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 15px 0 0;
+  align-items: start;
+}
+.onboard-body .progress-overview .step-item {
+  min-width: 0;
+  padding: 0 5px;
+  gap: 7px;
+  align-items: center;
+}
+.onboard-body .progress-overview .step-circle {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  box-shadow: 0 0 0 4px #fff;
+}
+.onboard-body .progress-overview .step-item::after {
+  display: block;
+  top: 16px;
+  left: calc(50% + 23px);
+  width: calc(100% - 38px);
+  height: 2px;
+}
+.onboard-body .progress-overview .step-item:last-child::after { display: none; }
+.onboard-body .progress-overview .step-text {
+  display: block;
+  max-width: 190px;
+  min-height: 32px;
+  font-size: 12px;
+  line-height: 1.3;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+.onboard-body .step-meta { margin: 6px 2px 13px; }
+@media (max-width: 640px) {
+  .onboard-body .progress-overview { padding: 15px 13px 14px; }
+  .onboard-body .progress-overview .steps { gap: 3px; margin-top: 13px; }
+  .onboard-body .progress-overview .step-item { padding: 0 2px; gap: 6px; }
+  .onboard-body .progress-overview .step-circle { width: 30px; height: 30px; font-size: 14px; }
+  .onboard-body .progress-overview .step-item::after { top: 14px; left: calc(50% + 20px); width: calc(100% - 35px); }
+  .onboard-body .progress-overview .step-text { font-size: 10px; line-height: 1.25; }
+}
+@media (max-width: 360px) {
+  .onboard-body .progress-overview .step-text { font-size: 9px; }
+}
+
+/* 2026-10-10: More prominent completed-step checkmarks. */
+.onboard-body .progress-overview .step-item.done .step-circle,
+.onboard-body .progress-overview .step-item.active.done .step-circle {
+  background: #16844b;
+  color: #ffffff;
+  border: 2px solid #0c6939;
+  font-size: 20px;
+  font-weight: 900;
+  box-shadow: 0 0 0 4px #e3f7eb, 0 3px 10px rgba(13, 105, 57, .25);
+}
+.onboard-body .progress-overview .step-item.done .step-text {
+  color: #126f42;
+  font-weight: 850;
+}
+@media (max-width: 640px) {
+  .onboard-body .progress-overview .step-item.done .step-circle,
+  .onboard-body .progress-overview .step-item.active.done .step-circle {
+    font-size: 18px;
+    box-shadow: 0 0 0 3px #e3f7eb, 0 2px 7px rgba(13, 105, 57, .22);
+  }
+}
