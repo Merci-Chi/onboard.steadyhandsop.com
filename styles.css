@@ -233,3 +233,19 @@
 
 /* Preserve the supplied handwritten tagline and color-match the original blue line. */
 .brand-copy .tagline-art{display:block;width:min(100%,610px);height:auto;aspect-ratio:2048 / 260;margin-top:12px;background:#d5edff;-webkit-mask-image:url("images/you-run-the-show.png");mask-image:url("images/you-run-the-show.png");-webkit-mask-position:left center;mask-position:left center;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+
+/* Login controls shared visually with Steady Hands Outreach. */
+.onboard-login-options{display:grid;gap:12px;margin:15px 0 23px}
+.onboard-check-label{display:flex;align-items:center;gap:11px;color:#173653;font-size:14px;font-weight:800;line-height:1.4;cursor:pointer;position:relative}
+.onboard-check-label>input{position:absolute;width:25px;height:25px;margin:0;opacity:0}
+.onboard-check-box{width:25px;height:25px;flex:0 0 25px;border:2px solid #c5d2df;border-radius:8px;display:grid;place-items:center;color:transparent;background:#fff;transition:background .15s,border-color .15s}
+.onboard-check-label>input:checked+.onboard-check-box{background:#1877e8;border-color:#1877e8;color:white}
+.onboard-check-label>input:focus-visible+.onboard-check-box{outline:3px solid #39b8ff;outline-offset:2px}
+.onboard-check-label.invalid .onboard-check-box{border-color:#bf323c}
+.onboard-check-label a{color:#1677e8;font-weight:900;text-decoration:underline;text-underline-offset:3px}
+.onboard-terms-error{color:#b3333c;font-size:12px;font-weight:700;margin:-5px 0 0}
+.onboard-login-submit{min-height:56px;background:#247bed;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:16px;font-size:19px;box-shadow:0 12px 24px #247bed22}
+.onboard-login-submit span{font-size:25px;font-weight:400}
+.onboard-forgot{display:block;margin:13px auto 0;color:#52657c;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.onboard-login-foot{font-weight:800;color:#98a9bf;margin-top:20px;display:flex;align-items:center;gap:13px}
+.onboard-login-foot::before,.onboard-login-foot::after{content:"";height:1px;background:#dbe3eb;flex:1}
