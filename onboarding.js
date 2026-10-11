@@ -5,7 +5,7 @@ const roles=[['Sales Associate',true],['Marketing Director',true],['Website Deve
 let user,step=0,saving=false;
 let previousStepWarning='';
 let reviewingFromFinal=false;
-let state={name:'',dob:'',phone:'',email:'',address:'',city:'',country:'',region:'',zip:'',role:'',weeklyHours:null,onboardingVersion:5,agreementRead:false,agreementName:'',agreementAt:'',trainingDone:false,paymentMethod:'',paymentDetail:'',paymentConsent:false,agreementTrack:'trial',agreementRole:'',complete:false,step:0};
+let state={name:'',dob:'',phone:'',email:'',address:'',city:'',country:'',region:'',zip:'',role:'',weeklyHours:null,onboardingVersion:5,agreementRead:false,agreementName:'',agreementSignature:'',agreementAt:'',trainingDone:false,paymentMethod:'',paymentDetail:'',paymentConsent:false,agreementTrack:'trial',agreementRole:'',complete:false,step:0};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const field=(label,id,type='text',value='',attrs='')=>`<label for="${id}"><span class="field-label-text">${esc(label.replace(/\s*\*$/, ''))}${attrs.includes('required')?' <span class="required-star" aria-label="required">*</span>':''}</span><input id="${id}" type="${type}" value="${esc(value)}" ${attrs}></label>`;
 const paymentDetailLabel=method=>({zelle:'Zelle email or phone',applepay:'Apple Pay phone number',cashapp:'Cash App $Cashtag',paypal:'PayPal email',other:'Preferred payment method'})[method]||'Payment details';
@@ -95,7 +95,7 @@ function render(){
  if(step===2){
   const hours=Number(state.weeklyHours);
   mark(`<p class="eyebrow">WORK PREFERENCES</p><h1>Your preferred schedule</h1><p class="lead">Select the weekly hours you'd prefer to work. Your choice will appear in your employment agreement and is subject to company approval.</p><div class="schedule-options"><label class="schedule-choice"><input type="radio" name="weekly-hours" value="10" ${hours===10?'checked':''}><span><strong>10 hours per week</strong><small>About 2 hours per workday over 5 days</small></span></label><label class="schedule-choice"><input type="radio" name="weekly-hours" value="20" ${hours===20?'checked':''}><span><strong>20 hours per week</strong><small>About 4 hours per workday over 5 days</small></span></label></div><p class="hint">This is a preferred schedule, not a promise of fixed hours. Your finalized offer will confirm scheduling and applicable pay terms.</p>`);
-  document.querySelectorAll('input[name="weekly-hours"]').forEach(input=>input.addEventListener('change',()=>{state.weeklyHours=Number(input.value);state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';render()}));
+  document.querySelectorAll('input[name="weekly-hours"]').forEach(input=>input.addEventListener('change',()=>{state.weeklyHours=Number(input.value);state.agreementRead=false;state.agreementName='';state.agreementSignature='';state.agreementAt='';state.agreementRole='';render()}));
  }
  if(step===3){
    const sales=state.role==='Sales Associate';
@@ -112,7 +112,8 @@ function render(){
    const doc=docs[track];
    const roleKey=`${state.role}:${track}:${hours}`;
    const sameTerms=state.agreementRole===roleKey;
-   mark(`<p class="eyebrow">YOUR EMPLOYMENT</p><h1>Employment agreement</h1><p class="lead">Review the terms for your selected role. This is a role-specific draft acknowledgment, not the final legally reviewed employment offer.</p><div class="document-panel"><h3>${esc(doc.title)}</h3>${doc.body}<p><strong>General acknowledgment:</strong> I understand the expectations above, will follow lawful company policies, maintain confidentiality and use only approved tools. This acknowledgment does not waive statutory rights.</p></div><label class="agree"><input id="agreement-read" type="checkbox" ${sameTerms&&state.agreementRead?'checked':''}><span>I have read the ${esc(doc.title)} acknowledgment. <span class="required-star">*</span></span></label>${field('Agreement signature — type your full legal name *','agreement-name','text',sameTerms?state.agreementName:'','autocomplete="name" required')}<p class="hint">A finalized written offer with actual pay, dates and relevant state-law terms should be issued separately before employment begins.</p>`);
+   mark(`<p class="eyebrow">YOUR EMPLOYMENT</p><h1>Employment agreement</h1><p class="lead">Review the terms for your selected role. This is a role-specific draft acknowledgment, not the final legally reviewed employment offer.</p><div class="document-panel"><h3>${esc(doc.title)}</h3>${doc.body}<p><strong>General acknowledgment:</strong> I understand the expectations above, will follow lawful company policies, maintain confidentiality and use only approved tools. This acknowledgment does not waive statutory rights.</p></div><label class="agree"><input id="agreement-read" type="checkbox" ${sameTerms&&state.agreementRead?'checked':''}><span>I have read the ${esc(doc.title)} acknowledgment. <span class="required-star">*</span></span></label><div class="signature-field"><label for="agreement-signature">Draw your signature <span class="required-star">*</span></label><div class="signature-pad"><canvas id="agreement-signature" width="560" height="155" aria-label="Draw your signature here"></canvas></div><div class="signature-controls"><span>Use your mouse, trackpad or finger to sign.</span><button type="button" id="clear-agreement-signature" class="secondary-button">Clear signature</button></div></div><p class="hint">A finalized written offer with actual pay, dates and relevant state-law terms should be issued separately before employment begins.</p>`);
+   initializeSignaturePad(sameTerms);
    document.querySelectorAll('input[name="agreement-track"]').forEach(input=>input.addEventListener('change',()=>{state.agreementTrack=input.value;state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';render()}));
  }
  if(step===4 && state.complete){mark(`<div class="finish-icon">✓</div><p class="eyebrow center">ONBOARDING COMPLETE</p><h1 class="center">Welcome to Steady Hands!</h1><p class="lead center">Your information has been saved successfully.</p><p class="center"><a class="primary-button" href="training.html">Continue to Training →</a></p>`)}
@@ -135,7 +136,7 @@ function isComplete(i){
  if(i===0)return true;
  if(i===1)return ['name','phone','email','country','region'].every(k=>filled(state[k])) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email) && validPhone(state.phone) && roles.some(([r,open])=>open&&r===state.role);
  if(i===2)return [10,20].includes(Number(state.weeklyHours));
- if(i===3)return Boolean(state.agreementRole===`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && state.agreementRead && filled(state.agreementName) && filled(state.name) && state.agreementName.trim().toLowerCase()===state.name.trim().toLowerCase());
+ if(i===3)return Boolean(state.agreementRole===`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && state.agreementRead && filled(state.agreementSignature));
  if(i===4)return Boolean(state.paymentMethod && state.paymentConsent && (!['zelle','applepay','cashapp','paypal','other'].includes(state.paymentMethod) || (filled(state.paymentDetail) && (state.paymentMethod!=='applepay' || validPhone(state.paymentDetail)))));
 
  return false;
@@ -143,7 +144,7 @@ function isComplete(i){
 const missingFields={
   1:[['name','full-name','Full legal name'],['email','email','Email address'],['phone','phone','Phone number'],['country','country','Country of residence'],['region','region','State / Province of residence'],['role',null,'Position']],
   2:[['weeklyHours','weekly-hours','Weekly schedule']],
-  3:[['agreementRead','agreement-read','Agreement acknowledgement'],['agreementName','agreement-name','Agreement signature']],
+  3:[['agreementRead','agreement-read','Agreement acknowledgement'],['agreementSignature','agreement-signature','Agreement signature']],
   4:[['paymentMethod',null,'Select how you would like to be paid'],['paymentConsent','payment-consent','Confirm payment preferences'],['paymentDetail','payment-detail','Payment account detail']]
 };
 function issues(i){
@@ -158,7 +159,7 @@ function issues(i){
     if(key==='paymentDetail'&&state.paymentMethod==='applepay'&&!validPhone(value))result.push({id,label,reason:'Enter a valid phone number'});
     if(key==='weeklyHours' && ![10,20].includes(Number(value)))result.push({id,label,reason:'Select 10 or 20 hours per week'});
     if(key==='role'&&!roles.some(([r,open])=>open&&r===value))result.push({id,label,reason:'Select an available position'});
-    if(key==='agreementName'&&filled(state.name)&&String(value).trim().toLowerCase()!==state.name.trim().toLowerCase())result.push({id,label,reason:'Must match your full legal name'});
+
   }
   if(i===3 && state.agreementRole!==`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && !result.some(x=>x.id==='agreement-read'))result.unshift({id:'agreement-read',label:'Acknowledge the agreement for your selected role',reason:'Review and acknowledge your current agreement'});
   return result;
@@ -181,6 +182,22 @@ function showIssues(i){
   else{status.textContent='';status.removeAttribute('role')}
   return found;
 }
+function initializeSignaturePad(sameTerms){
+ const canvas=$('#agreement-signature');if(!canvas)return;
+ const ctx=canvas.getContext('2d');if(!ctx)return;
+ ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#132c50';
+ let drawing=false,hasInk=false;
+ const snapshot=()=>{if(hasInk)state.agreementSignature=canvas.toDataURL('image/png');};
+ const point=e=>{const rect=canvas.getBoundingClientRect();return {x:(e.clientX-rect.left)*canvas.width/rect.width,y:(e.clientY-rect.top)*canvas.height/rect.height};};
+ canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.1,p.y+.1);ctx.stroke();hasInk=true;snapshot();});
+ canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;});
+ const end=e=>{if(!drawing)return;drawing=false;snapshot();};
+ canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
+ $('#clear-agreement-signature').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);state.agreementSignature='';hasInk=false;};
+ if(sameTerms&&state.agreementSignature?.startsWith('data:image/')){
+  const savedImage=new Image();savedImage.onload=()=>{ctx.drawImage(savedImage,0,0,canvas.width,canvas.height);hasInk=true;};savedImage.src=state.agreementSignature;
+ }
+}
 function collectDraft(){
  const value=id=>$('#'+id)?.value?.trim()??'';
  if(step===1){
@@ -188,7 +205,7 @@ function collectDraft(){
   state.role=$('input[name="team-role"]:checked')?.value||'';
  }
  if(step===2){state.weeklyHours=Number($('input[name="weekly-hours"]:checked')?.value)||null;}
- if(step===3){state.agreementRead=Boolean($('#agreement-read')?.checked);state.agreementName=value('agreement-name');state.agreementRole=`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}`;state.agreementAt=isComplete(3)?state.agreementAt||new Date().toISOString():'';}
+ if(step===3){state.agreementRead=Boolean($('#agreement-read')?.checked);state.agreementRole=`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}`;state.agreementAt=isComplete(3)?state.agreementAt||new Date().toISOString():'';}
  if(step===4){state.paymentMethod=$('input[name="payment-method"]:checked')?.value||state.paymentMethod||'';state.paymentDetail=$('#payment-detail')?.value.trim()??state.paymentDetail;state.paymentConsent=Boolean($('#payment-consent')?.checked)}
 }
 
