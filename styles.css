@@ -388,3 +388,41 @@
 #step-content .role-choice.is-full{background:#f5f7fa;opacity:.7}
 #step-content .role-choice input{flex:none}
 @media(max-width:600px){#step-content .role-options{grid-template-columns:1fr}}
+
+/* Four-lesson Training Center: responsive card and modal polish */
+.training-page{max-width:1080px;width:100%;margin:24px auto;padding:0 clamp(14px,3vw,32px) 60px;box-sizing:border-box}
+.training-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.training-lesson{display:flex;flex-direction:column;min-width:0;height:100%;padding:12px;border-radius:18px}
+.lesson-art{width:100%;aspect-ratio:16/9;flex:none}
+.lesson-meta{display:flex;flex-direction:column;flex:1;min-width:0;padding:12px 5px 7px}
+.lesson-meta strong{font-size:clamp(15px,1.7vw,18px);line-height:1.35;overflow-wrap:anywhere}
+.lesson-meta p{min-height:0;margin:7px 0 14px;font-size:13px;line-height:1.5}
+.lesson-done{margin-top:auto}
+.training-hero{padding:clamp(20px,3.5vw,32px);margin-bottom:18px}
+.training-body .topbar{gap:12px}
+.training-body .header-right{min-width:0}
+.training-body #account-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34vw}
+.video-dialog{max-width:min(760px,calc(100vw - 18px));max-height:calc(100dvh - 18px);width:100%;box-sizing:border-box}
+#training-player{aspect-ratio:auto;max-height:min(58dvh,560px);height:auto;width:100%;object-fit:contain}
+.video-footer{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px}
+.video-footer button{min-width:0;white-space:normal;padding:11px 8px}
+@media(max-width:600px){
+ .training-page{margin:14px auto;padding:0 12px 50px}
+ .training-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .training-lesson{padding:7px;border-radius:13px}
+ .lesson-art{border-radius:9px;aspect-ratio:4/3}
+ .lesson-icon{font-size:35px}.lesson-play{width:40px;height:40px;font-size:17px}
+ .lesson-number{top:7px;left:7px;padding:3px 6px;font-size:11px}
+ .lesson-meta{padding:10px 4px 6px}
+ .lesson-meta strong{font-size:13px}.lesson-meta p{font-size:11px;line-height:1.4;margin:5px 0 10px}
+ .lesson-done{font-size:11px}
+ .training-hero{padding:18px;margin-bottom:12px;border-radius:17px}
+ .training-hero h1{font-size:25px}
+ .video-dialog-content{padding:14px}
+ .video-dialog-heading h2{font-size:18px}
+ .video-footer{grid-template-columns:1fr 1fr}
+ #video-complete{grid-column:1/-1;grid-row:1}
+ .video-footer button{font-size:12px;min-height:44px}
+ .training-body #account-email{display:none}
+}
+@media(max-width:350px){.training-grid{grid-template-columns:1fr}.lesson-art{aspect-ratio:16/9}}
