@@ -450,3 +450,8 @@
 .training-finish-open{display:block;margin:0 auto 20px}
 .training-finish-open[hidden]{display:none}
 @media(max-width:560px){.training-finish-dialog{width:calc(100% - 12px);max-height:calc(100dvh - 12px);border-radius:15px}.training-finish-dialog .finish-inner{padding:17px 14px}.finish-demo{padding:14px}.finish-install,.finish-credentials{grid-template-columns:1fr}.finish-message p{font-size:13px}.finish-demo h3{font-size:17px}}
+
+/* Separate Safari and Chrome instruction narrations at training completion */
+.finish-install-label{display:block;margin:12px 0 7px;font-size:12px;font-weight:750;color:#234f7a}
+.finish-install audio{display:block;width:100%;max-width:100%;height:44px}
+.finish-install>div{min-width:0}
