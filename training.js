@@ -1,10 +1,10 @@
 import {supabase} from './supabase-client.js';
 const $=selector=>document.querySelector(selector);
 const lessons=[
- {title:'Introduction + Training Disclaimer',description:'Welcome to Steady Hands and important information about the fictional examples shown.',video:'App-Tutorial Videos/00-Introduction-and-Disclaimer.mp4',icon:'▶'},
+ {title:'Introduction + Training Disclaimer',description:'Welcome to Steady Hands and important information about the fictional examples shown.',video:'App-Tutorial Videos/00-Introduction-and-Training-Disclaimer.mp4',icon:'▶'},
  {title:'Getting Started with Outreach',description:'Navigate the app, select leads, and understand the Outreach page.',video:'App-Tutorial Videos/01-Getting-Started-with-Outreach.mp4',icon:'⌕'},
  {title:'Making Calls',description:'Call screens, scripts, notes, templates, and live transcripts.',video:'App-Tutorial Videos/02-Making-Calls.mp4',icon:'☎'},
- {title:'Post-Call Questionnaire',description:'Record call outcomes, customer interest, helpful tags, and notes accurately after each call.',video:'App-Tutorial Videos/03-Follow-Ups-and-Scheduling.mp4',icon:'▦'}
+ {title:'Post-Call Questionnaire',description:'Record call outcomes, customer interest, helpful tags, and notes accurately after each call.',video:'App-Tutorial Videos/03-Post-Call-Questionnaire.mp4',icon:'▦'}
 ];
 let completed=new Set(),activeIndex=0,user;
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
