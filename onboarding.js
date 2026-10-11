@@ -112,8 +112,9 @@ function render(){
    const doc=docs[track];
    const roleKey=`${state.role}:${track}:${hours}`;
    const sameTerms=state.agreementRole===roleKey;
-   mark(`<p class="eyebrow">YOUR EMPLOYMENT</p><h1>Employment agreement</h1><p class="lead">Review the terms for your selected role. This is a role-specific draft acknowledgment, not the final legally reviewed employment offer.</p><div class="document-panel"><h3>${esc(doc.title)}</h3>${doc.body}<p><strong>General acknowledgment:</strong> I understand the expectations above, will follow lawful company policies, maintain confidentiality and use only approved tools. This acknowledgment does not waive statutory rights.</p></div><label class="agree"><input id="agreement-read" type="checkbox" ${sameTerms&&state.agreementRead?'checked':''}><span>I have read the ${esc(doc.title)} acknowledgment. <span class="required-star">*</span></span></label><div class="signature-field"><label for="agreement-signature">Draw your signature <span class="required-star">*</span></label><div class="signature-pad"><canvas id="agreement-signature" width="560" height="155" aria-label="Draw your signature here"></canvas></div><div class="signature-controls"><span>Use your mouse, trackpad or finger to sign.</span><button type="button" id="clear-agreement-signature" class="secondary-button">Clear signature</button></div></div><p class="hint">A finalized written offer with actual pay, dates and relevant state-law terms should be issued separately before employment begins.</p>`);
+   mark(`<p class="eyebrow">YOUR EMPLOYMENT</p><h1>Employment agreement</h1><p class="lead">Review the terms for your selected role. This is a role-specific draft acknowledgment, not the final legally reviewed employment offer.</p><div class="document-panel"><h3>${esc(doc.title)}</h3>${doc.body}<p><strong>General acknowledgment:</strong> I understand the expectations above, will follow lawful company policies, maintain confidentiality and use only approved tools. This acknowledgment does not waive statutory rights.</p></div><label class="agree"><input id="agreement-read" type="checkbox" ${sameTerms&&state.agreementRead?'checked':''}><span>I have read the ${esc(doc.title)} acknowledgment. <span class="required-star">*</span></span></label><div class="signature-field"><label for="agreement-signature">Draw your signature <span class="required-star">*</span></label><div class="signature-pad"><canvas id="agreement-signature" width="560" height="155" aria-label="Draw your signature here"></canvas></div><div class="signature-controls"><span>Use your mouse, trackpad or finger to sign.</span><button type="button" id="clear-agreement-signature" class="secondary-button">Clear signature</button></div></div><div class="agreement-download-row"><button type="button" id="download-signed-agreement" class="secondary-button">↓ Download signed agreement (PDF)</button><span id="agreement-download-status" role="status" aria-live="polite"></span></div><p class="hint">A finalized written offer with actual pay, dates and relevant state-law terms should be issued separately before employment begins.</p>`);
    initializeSignaturePad(sameTerms);
+   $('#download-signed-agreement').addEventListener('click',downloadSignedAgreement);
    document.querySelectorAll('input[name="agreement-track"]').forEach(input=>input.addEventListener('change',()=>{state.agreementTrack=input.value;state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';render()}));
  }
  if(step===4 && state.complete){mark(`<div class="finish-icon">✓</div><p class="eyebrow center">ONBOARDING COMPLETE</p><h1 class="center">Welcome to Steady Hands!</h1><p class="lead center">Your information has been saved successfully.</p><p class="center"><a class="primary-button" href="training.html">Continue to Training →</a></p>`)}
@@ -181,6 +182,79 @@ function showIssues(i){
   if(found.length){status.textContent='Please complete: '+found.map(x=>x.label).join(', ')+'. You can still use Back and Next to save a draft.';status.setAttribute('role','alert')}
   else{status.textContent='';status.removeAttribute('role')}
   return found;
+}
+// Export the exact agreement displayed for this role, together with the drawn signature.
+let pdfLibraryPromise;
+function loadAgreementPdfLibrary(){
+ if(window.jspdf?.jsPDF)return Promise.resolve(window.jspdf.jsPDF);
+ if(!pdfLibraryPromise){
+  pdfLibraryPromise=new Promise((resolve,reject)=>{
+   const script=document.createElement('script');
+   script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+   script.onload=()=>window.jspdf?.jsPDF?resolve(window.jspdf.jsPDF):reject(new Error('PDF library unavailable'));
+   script.onerror=()=>reject(new Error('PDF library could not be loaded'));
+   document.head.appendChild(script);
+  }).catch(err=>{pdfLibraryPromise=null;throw err;});
+ }
+ return pdfLibraryPromise;
+}
+async function downloadSignedAgreement(){
+ const button=$('#download-signed-agreement');
+ const status=$('#agreement-download-status');
+ if(!button||!status)return;
+ // A file labeled signed must always contain the actual ink, not a blank pad.
+ if(!state.agreementSignature?.startsWith('data:image/png')){
+  status.textContent='Please draw your signature before downloading.';
+  return;
+ }
+ const panel=$('#step-content .document-panel');
+ if(!panel){status.textContent='Agreement is unavailable.';return;}
+ button.disabled=true;status.textContent='Preparing PDF…';
+ try{
+  const JsPDF=await loadAgreementPdfLibrary();
+  const pdf=new JsPDF({unit:'pt',format:'letter'});
+  const left=52,right=52,pageWidth=612,pageHeight=792,usable=pageWidth-left-right;
+  let y=57;
+  const ensure=(height)=>{if(y+height>pageHeight-57){pdf.addPage();y=57;}};
+  pdf.setTextColor(18,42,78);
+  pdf.setFont('helvetica','bold');pdf.setFontSize(17);
+  pdf.text('STEADY HANDS LLC',left,y);y+=26;
+  pdf.setDrawColor(170,185,207);pdf.line(left,y,pageWidth-right,y);y+=25;
+  // Use the same visible clauses as the screen, so the PDF never uses outdated terms.
+  for(const element of panel.children){
+   const tag=element.tagName.toLowerCase();
+   const heading=tag==='h3'||tag==='h4';
+   const content=(element.innerText||element.textContent||'').trim();
+   if(!content)continue;
+   pdf.setFont('helvetica',heading?'bold':'normal');
+   pdf.setFontSize(tag==='h3'?14:heading?11:10);
+   pdf.setTextColor(heading?18:45,heading?42:55,heading?78:70);
+   const lineHeight=tag==='h3'?18:heading?15:14;
+   const lines=pdf.splitTextToSize(content,usable);
+   ensure(lines.length*lineHeight+14);
+   for(const line of lines){ensure(lineHeight);pdf.text(line,left,y);y+=lineHeight;}
+   y+=heading?10:12;
+  }
+  ensure(158);
+  pdf.setDrawColor(170,185,207);pdf.line(left,y,pageWidth-right,y);y+=22;
+  pdf.setFont('helvetica','bold');pdf.setFontSize(11);pdf.setTextColor(18,42,78);
+  pdf.text('Employee acknowledgment and signature',left,y);y+=19;
+  pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+  const signedName=(state.name||user?.email||'Employee').trim();
+  pdf.text('Name: '+signedName,left,y);y+=17;
+  pdf.text('Position: '+(state.role||'Not specified'),left,y);y+=17;
+  const signedAt=state.agreementAt||new Date().toISOString();
+  pdf.text('Signed on: '+new Date(signedAt).toLocaleString(),left,y);y+=7;
+  pdf.addImage(state.agreementSignature,'PNG',left,y,250,70,undefined,'FAST');y+=76;
+  pdf.setFontSize(8);pdf.setTextColor(88,99,114);
+  pdf.text('Role-specific acknowledgment; not a final employer-issued offer.',left,y);
+  const slug=signedName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'employee';
+  pdf.save('steady-hands-agreement-'+slug+'.pdf');
+  status.textContent='PDF downloaded.';
+ }catch(error){
+  console.error('Agreement PDF export failed',error);
+  status.textContent='Could not create PDF. Please check your connection and try again.';
+ }finally{button.disabled=false;}
 }
 function initializeSignaturePad(sameTerms){
  const canvas=$('#agreement-signature');if(!canvas)return;
