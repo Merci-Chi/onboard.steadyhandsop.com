@@ -44,23 +44,16 @@ $('#video-complete').onclick=async()=>{
  completed.add(activeIndex);render();$('#video-complete').textContent='✓ Completed';
  await saveProgress();if(completed.size===lessons.length){closeLesson();showFinish()}
 };
-const welcomeText="Congratulations! You've officially completed your Steady Hands onboarding and training! You're now one step closer to getting started with our team. An administrator will be in touch to guide you through the next steps, answer any remaining questions, and help ensure you're fully prepared to begin your role. In the meantime, feel free to revisit any of the training materials if you need a refresher. We're excited to have you joining Steady Hands LLC, and we look forward to seeing what you'll accomplish!";
-let speaking=false;
+const outroAudio=$('#finish-audio');
 const installAudios=[$('#finish-safari-audio'),$('#finish-chrome-audio')];
-function stopInstallAudios(except=null){installAudios.forEach(audio=>{if(audio!==except)audio.pause()})}
-installAudios.forEach(audio=>audio.addEventListener('play',()=>{stopWelcomeAudio();stopInstallAudios(audio)}));
-function stopWelcomeAudio(){if('speechSynthesis' in window)window.speechSynthesis.cancel();speaking=false;$('#finish-audio').textContent='▶ Play outro audio'}
-function showFinish(){stopWelcomeAudio();stopInstallAudios();if(!$('#training-finished').open)$('#training-finished').showModal()}
+const allFinishAudios=[outroAudio,...installAudios];
+function stopOtherAudios(except=null){allFinishAudios.forEach(audio=>{if(audio!==except)audio.pause()})}
+allFinishAudios.forEach(audio=>audio.addEventListener('play',()=>stopOtherAudios(audio)));
+outroAudio.addEventListener('error',()=>{$('#finish-audio-status').textContent='Outro recording coming soon. An administrator will upload audios/outro.mp3.'});
+outroAudio.addEventListener('playing',()=>{$('#finish-audio-status').textContent='Playing your recorded outro message.'});
+function showFinish(){stopOtherAudios();if(!$('#training-finished').open)$('#training-finished').showModal()}
 $('#view-training-finish').onclick=showFinish;
-$('#finish-audio').onclick=()=>{
- if(!('speechSynthesis' in window)){$('#finish-audio-status').textContent='Audio narration is not available in this browser. You can read the message above.';return}
- if(speaking){stopWelcomeAudio();return}
- stopInstallAudios();
- window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(welcomeText);utterance.rate=0.96;
- utterance.onend=utterance.onerror=()=>{speaking=false;$('#finish-audio').textContent='▶ Replay outro audio'};
- window.speechSynthesis.speak(utterance);speaking=true;$('#finish-audio').textContent='■ Stop outro audio';$('#finish-audio-status').textContent='Playing your outro message…';
-};
-$('#training-finished').addEventListener('close',()=>{stopWelcomeAudio();stopInstallAudios()});
+$('#training-finished').addEventListener('close',()=>stopOtherAudios());
 $('#training-done-close').onclick=()=>$('#training-finished').close();
 $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('login.html')};
 (async()=>{
