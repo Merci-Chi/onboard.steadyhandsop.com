@@ -113,6 +113,16 @@ function render(){
    const roleKey=`${state.role}:${track}:${hours}`;
    const sameTerms=state.agreementRole===roleKey;
    mark(`<p class="eyebrow">YOUR EMPLOYMENT</p><h1>Employment agreement</h1><p class="lead">Review the terms for your selected role. This is a role-specific draft acknowledgment, not the final legally reviewed employment offer.</p><div class="agreement-download-row" style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:18px 0 24px;padding:18px;border:1px solid #bbd3ee;background:#edf5ff;border-radius:14px"><button type="button" id="download-signed-agreement" class="primary-button" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;font-weight:700">↓ Download signed agreement (PDF)</button><span id="agreement-download-status" role="status" aria-live="polite" style="font-size:14px">Sign in the box below, then download your copy here.</span></div><div class="document-panel"><h3>${esc(doc.title)}</h3>${doc.body}<p><strong>General acknowledgment:</strong> I understand the expectations above, will follow lawful company policies, maintain confidentiality and use only approved tools. This acknowledgment does not waive statutory rights.</p></div><label class="agree"><input id="agreement-read" type="checkbox" ${sameTerms&&state.agreementRead?'checked':''}><span>I have read the ${esc(doc.title)} acknowledgment. <span class="required-star">*</span></span></label><div class="signature-field"><label for="agreement-signature">Draw your signature <span class="required-star">*</span></label><div class="signature-pad"><canvas id="agreement-signature" width="560" height="155" aria-label="Draw your signature here"></canvas></div><div class="signature-controls"><span>Use your mouse, trackpad or finger to sign.</span><button type="button" id="clear-agreement-signature" class="secondary-button">Clear signature</button></div></div><p class="hint">A finalized written offer with actual pay, dates and relevant state-law terms should be issued separately before employment begins.</p>`);
+   const agreementUnlocked=[0,1,2].every(isComplete);
+   if(!agreementUnlocked){
+    const note=$('#agreement-download-status');
+    note.textContent='Complete Welcome, Personal information, and Work preferences before signing or downloading.';
+    $('#agreement-read').disabled=true;
+    $('#agreement-signature').style.pointerEvents='none';
+    $('#agreement-signature').setAttribute('aria-disabled','true');
+    $('#clear-agreement-signature').disabled=true;
+    $('#download-signed-agreement').disabled=true;
+   }
    initializeSignaturePad(sameTerms);
    $('#download-signed-agreement').addEventListener('click',downloadSignedAgreement);
    document.querySelectorAll('input[name="agreement-track"]').forEach(input=>input.addEventListener('change',()=>{state.agreementTrack=input.value;state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';render()}));
@@ -137,7 +147,7 @@ function isComplete(i){
  if(i===0)return true;
  if(i===1)return ['name','phone','email','country','region'].every(k=>filled(state[k])) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email) && validPhone(state.phone) && roles.some(([r,open])=>open&&r===state.role);
  if(i===2)return [10,20].includes(Number(state.weeklyHours));
- if(i===3)return Boolean(state.agreementRole===`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && state.agreementRead && filled(state.agreementSignature));
+ if(i===3)return Boolean([0,1,2].every(isComplete) && state.agreementRole===`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && state.agreementRead && filled(state.agreementSignature));
  if(i===4)return Boolean(state.paymentMethod && state.paymentConsent && (!['zelle','applepay','cashapp','paypal','other'].includes(state.paymentMethod) || (filled(state.paymentDetail) && (state.paymentMethod!=='applepay' || validPhone(state.paymentDetail)))));
 
  return false;
@@ -184,76 +194,124 @@ function showIssues(i){
   return found;
 }
 // Export the exact agreement displayed for this role, together with the drawn signature.
-let pdfLibraryPromise;
-function loadAgreementPdfLibrary(){
- if(window.jspdf?.jsPDF)return Promise.resolve(window.jspdf.jsPDF);
- if(!pdfLibraryPromise){
-  pdfLibraryPromise=new Promise((resolve,reject)=>{
-   const script=document.createElement('script');
-   script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
-   script.onload=()=>window.jspdf?.jsPDF?resolve(window.jspdf.jsPDF):reject(new Error('PDF library unavailable'));
-   script.onerror=()=>reject(new Error('PDF library could not be loaded'));
-   document.head.appendChild(script);
-  }).catch(err=>{pdfLibraryPromise=null;throw err;});
+// Self-contained PDF writer: does not need a CDN or third-party library.
+function pdfSafe(s){
+ return String(s??'').normalize('NFKD').replace(/[^\x20-\x7e]/g,c=>({'\u2014':'-','\u2013':'-','\u2019':"'",'\u201c':'"','\u201d':'"'}[c]||' ')).replace(/[\\()]/g,'\\$&');
+}
+function pdfLines(text,maxChars=88){
+ const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');
+ const lines=[];let line='';
+ for(const word of words){
+  if((line+' '+word).trim().length>maxChars&&line){lines.push(line);line='';}
+  if(word.length>maxChars){if(line){lines.push(line);line='';}for(let i=0;i<word.length;i+=maxChars)lines.push(word.slice(i,i+maxChars));}
+  else line=(line+' '+word).trim();
  }
- return pdfLibraryPromise;
+ if(line)lines.push(line);return lines;
+}
+async function signedAgreementPdfBlob(panel){
+ const source=state.agreementSignature;
+ const image=new Image();
+ image.src=source;
+ await image.decode();
+ // JPEG embeds directly in PDF without needing PNG alpha/zlib parsing.
+ const canvas=document.createElement('canvas');canvas.width=image.naturalWidth||560;canvas.height=image.naturalHeight||155;
+ const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0);
+ const jpeg=canvas.toDataURL('image/jpeg',0.92).split(',')[1];
+ const binary=atob(jpeg);
+ const jpg=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)jpg[i]=binary.charCodeAt(i);
+ const encoder=new TextEncoder(),pieces=[];let offset=0;
+ const add=bytes=>{pieces.push(bytes);offset+=bytes.length;};
+ const put=text=>add(encoder.encode(text));
+ const objects=[];const addObj=content=>{objects.push(content);return objects.length;};
+ const catalog=addObj(null),pages=addObj(null);
+ const font=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+ const fontBold=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+ const imgRef=addObj({image:true});
+ const pagesList=[];
+ let commands=[],y=746;
+ const write=(text,size=10,bold=false,space=15)=>{
+  const lines=pdfLines(text,size>=13?73:92);
+  for(const line of lines){
+   if(y<60)newPage();
+   commands.push('BT /'+(bold?'F2':'F1')+' '+size+' Tf 52 '+y+' Td ('+pdfSafe(line)+') Tj ET');
+   y-=space;
+  }
+ };
+ const newPage=()=>{
+  if(commands.length){
+   const stream=commands.join('\n')+'\n';
+   const streamRef=addObj({stream});
+   const page=addObj({page:true,streamRef});pagesList.push(page);
+  }
+  commands=[];y=744;
+ };
+ write('STEADY HANDS LLC',17,true,23);
+ y-=12;
+ for(const el of panel.children){
+  const tag=el.tagName.toLowerCase();
+  const heading=tag==='h3'||tag==='h4';
+  const content=(el.innerText||el.textContent||'').trim();
+  if(!content)continue;
+  y-=heading?12:5;
+  write(content,tag==='h3'?14:heading?11:10,heading,heading?18:15);
+ }
+ if(y<230)newPage();
+ y-=24;
+ write('Employee acknowledgment and signature',12,true,20);
+ const signedName=(state.name||user?.email||'Employee').trim();
+ write('Name: '+signedName);write('Position: '+(state.role||'Not specified'));
+ write('Signed on: '+new Date(state.agreementAt||Date.now()).toLocaleString());
+ const signatureY=y-94;
+ commands.push('q 250 0 0 70 52 '+signatureY+' cm /Sig Do Q');
+ y=signatureY-24;
+ write('Role-specific acknowledgment; not a final employer-issued offer.',8,false,12);
+ newPage();
+ objects[catalog-1]='<< /Type /Catalog /Pages '+pages+' 0 R >>';
+ objects[pages-1]='<< /Type /Pages /Kids ['+pagesList.map(i=>i+' 0 R').join(' ')+'] /Count '+pagesList.length+' >>';
+ for(const p of pagesList){
+  const item=objects[p-1];
+  objects[p-1]='<< /Type /Page /Parent '+pages+' 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 '+font+' 0 R /F2 '+fontBold+' 0 R >> /XObject << /Sig '+imgRef+' 0 R >> >> /Contents '+item.streamRef+' 0 R >>';
+ }
+ put('%PDF-1.4\n');
+ const offsets=[0];
+ for(let i=0;i<objects.length;i++){
+  offsets.push(offset);put((i+1)+' 0 obj\n');
+  const obj=objects[i];
+  if(obj&&obj.image){
+   put('<< /Type /XObject /Subtype /Image /Width '+canvas.width+' /Height '+canvas.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpg.length+' >>\nstream\n');
+   add(jpg);put('\nendstream\n');
+  }else if(obj&&obj.stream!==undefined){
+   const data=encoder.encode(obj.stream);
+   put('<< /Length '+data.length+' >>\nstream\n');add(data);put('endstream\n');
+  }else put(obj+'\n');
+  put('endobj\n');
+ }
+ const xref=offset;
+ put('xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n');
+ for(let i=1;i<offsets.length;i++)put(String(offsets[i]).padStart(10,'0')+' 00000 n \n');
+ put('trailer\n<< /Size '+(objects.length+1)+' /Root '+catalog+' 0 R >>\nstartxref\n'+xref+'\n%%EOF');
+ return new Blob(pieces,{type:'application/pdf'});
 }
 async function downloadSignedAgreement(){
- const button=$('#download-signed-agreement');
- const status=$('#agreement-download-status');
+ const button=$('#download-signed-agreement'),status=$('#agreement-download-status');
  if(!button||!status)return;
- // A file labeled signed must always contain the actual ink, not a blank pad.
- if(!state.agreementSignature?.startsWith('data:image/png')){
-  status.textContent='Please draw your signature before downloading.';
-  return;
- }
+ if(![0,1,2].every(isComplete)){status.textContent='Complete the first three steps before downloading.';return;}
+ collectDraft();
+ if(!isComplete(3)){status.textContent='Read and acknowledge the agreement, then draw your signature before downloading.';return;}
  const panel=$('#step-content .document-panel');
  if(!panel){status.textContent='Agreement is unavailable.';return;}
  button.disabled=true;status.textContent='Preparing PDF…';
  try{
-  const JsPDF=await loadAgreementPdfLibrary();
-  const pdf=new JsPDF({unit:'pt',format:'letter'});
-  const left=52,right=52,pageWidth=612,pageHeight=792,usable=pageWidth-left-right;
-  let y=57;
-  const ensure=(height)=>{if(y+height>pageHeight-57){pdf.addPage();y=57;}};
-  pdf.setTextColor(18,42,78);
-  pdf.setFont('helvetica','bold');pdf.setFontSize(17);
-  pdf.text('STEADY HANDS LLC',left,y);y+=26;
-  pdf.setDrawColor(170,185,207);pdf.line(left,y,pageWidth-right,y);y+=25;
-  // Use the same visible clauses as the screen, so the PDF never uses outdated terms.
-  for(const element of panel.children){
-   const tag=element.tagName.toLowerCase();
-   const heading=tag==='h3'||tag==='h4';
-   const content=(element.innerText||element.textContent||'').trim();
-   if(!content)continue;
-   pdf.setFont('helvetica',heading?'bold':'normal');
-   pdf.setFontSize(tag==='h3'?14:heading?11:10);
-   pdf.setTextColor(heading?18:45,heading?42:55,heading?78:70);
-   const lineHeight=tag==='h3'?18:heading?15:14;
-   const lines=pdf.splitTextToSize(content,usable);
-   ensure(lines.length*lineHeight+14);
-   for(const line of lines){ensure(lineHeight);pdf.text(line,left,y);y+=lineHeight;}
-   y+=heading?10:12;
-  }
-  ensure(158);
-  pdf.setDrawColor(170,185,207);pdf.line(left,y,pageWidth-right,y);y+=22;
-  pdf.setFont('helvetica','bold');pdf.setFontSize(11);pdf.setTextColor(18,42,78);
-  pdf.text('Employee acknowledgment and signature',left,y);y+=19;
-  pdf.setFont('helvetica','normal');pdf.setFontSize(10);
-  const signedName=(state.name||user?.email||'Employee').trim();
-  pdf.text('Name: '+signedName,left,y);y+=17;
-  pdf.text('Position: '+(state.role||'Not specified'),left,y);y+=17;
-  const signedAt=state.agreementAt||new Date().toISOString();
-  pdf.text('Signed on: '+new Date(signedAt).toLocaleString(),left,y);y+=7;
-  pdf.addImage(state.agreementSignature,'PNG',left,y,250,70,undefined,'FAST');y+=76;
-  pdf.setFontSize(8);pdf.setTextColor(88,99,114);
-  pdf.text('Role-specific acknowledgment; not a final employer-issued offer.',left,y);
-  const slug=signedName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'employee';
-  pdf.save('steady-hands-agreement-'+slug+'.pdf');
-  status.textContent='PDF downloaded.';
+  const pdf=await signedAgreementPdfBlob(panel),url=URL.createObjectURL(pdf);
+  const a=document.createElement('a');a.href=url;
+  a.download='steady-hands-agreement-'+(state.name||'employee').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.pdf';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  status.textContent='Your signed PDF is ready.';
  }catch(error){
   console.error('Agreement PDF export failed',error);
-  status.textContent='Could not create PDF. Please check your connection and try again.';
+  status.textContent='PDF could not be generated. Please try again.';
  }finally{button.disabled=false;}
 }
 function initializeSignaturePad(sameTerms){
