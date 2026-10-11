@@ -426,3 +426,27 @@
  .training-body #account-email{display:none}
 }
 @media(max-width:350px){.training-grid{grid-template-columns:1fr}.lesson-art{aspect-ratio:16/9}}
+
+/* End-of-training welcome, demo instructions and responsive dialog */
+.training-finish-dialog{max-width:720px;width:calc(100% - 24px);max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box}
+.training-finish-dialog .finish-inner{padding:28px;gap:12px;align-items:stretch;text-align:left}
+.training-finish-dialog .success-icon{margin:0 auto 2px;width:58px;height:58px;font-size:32px}
+.training-finish-dialog .eyebrow,.training-finish-dialog h2{text-align:center}
+.training-finish-dialog h2{font-size:clamp(24px,4vw,30px)}
+.finish-message{display:grid;gap:9px;margin:8px 0}.finish-message p{margin:0;line-height:1.6;color:#435d77;font-size:14px}
+.finish-demo{margin:12px 0 6px;padding:20px;border:1px solid #d5e6f8;border-radius:16px;background:#f4f9ff}
+.finish-demo h3{font-size:19px;color:#14365e;margin:0 0 9px}.finish-demo h4{color:#14365e;margin:20px 0 8px}
+.finish-demo p{color:#435d77;font-size:13px;line-height:1.55;margin:8px 0}
+.finish-credentials{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
+.finish-credentials>div{min-width:0;padding:13px;background:white;border:1px solid #d9e6f4;border-radius:10px}
+.finish-credentials small{display:block;color:#54718b;font-size:12px;margin-bottom:5px}
+.finish-credentials strong{display:block;color:#10355a;font-size:13px;overflow-wrap:anywhere;user-select:text}
+.finish-audio{align-self:center;min-height:44px}
+.finish-demo-link{display:flex;justify-content:center;align-items:center;text-decoration:none;text-align:center;min-height:48px;margin:14px 0;width:100%;box-sizing:border-box}
+.finish-hint{font-size:12px!important;color:#627990!important}
+.finish-install{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.finish-install>div{background:white;border:1px solid #dbe8f5;border-radius:12px;padding:13px}
+.finish-install strong{font-size:13px;color:#153c64}
+.training-finish-open{display:block;margin:0 auto 20px}
+.training-finish-open[hidden]{display:none}
+@media(max-width:560px){.training-finish-dialog{width:calc(100% - 12px);max-height:calc(100dvh - 12px);border-radius:15px}.training-finish-dialog .finish-inner{padding:17px 14px}.finish-demo{padding:14px}.finish-install,.finish-credentials{grid-template-columns:1fr}.finish-message p{font-size:13px}.finish-demo h3{font-size:17px}}
