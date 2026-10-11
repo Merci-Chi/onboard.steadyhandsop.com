@@ -459,3 +459,12 @@
 /* Recorded completion outro audio */
 .training-finish-dialog audio.finish-audio{display:block;align-self:stretch;width:100%;max-width:100%;min-height:44px;height:45px}
 .training-finish-dialog .finish-outro-label{font-weight:800;font-size:13px;color:#244c78;margin-top:6px}
+
+/* Handwritten onboarding agreement signature */
+.signature-field{margin:20px 0;display:grid;gap:9px}
+.signature-field>label{font-weight:700;color:#17345a}
+.signature-pad{background:#fff;border:2px solid #b5cae2;border-radius:12px;overflow:hidden}
+.signature-pad canvas{display:block;width:100%;height:auto;aspect-ratio:560/155;touch-action:none;cursor:crosshair}
+.signature-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.signature-controls span{font-size:.88rem;color:#607896}
+.signature-controls button{width:auto;margin:0;padding:9px 16px}
