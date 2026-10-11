@@ -26,7 +26,7 @@ async function openLesson(i){
  $('#video-complete').textContent=completed.has(i)?'✓ Completed':'Mark as completed ✓';
  $('#missing-video').hidden=true;player.hidden=false;
  player.src=encodeURI(lesson.video);player.load();
- player.onerror=()=>{if(activeIndex!==i)return;player.pause();player.hidden=true;$('#missing-video').hidden=false};
+ player.onerror=()=>{if(activeIndex!==i)return;player.pause();player.hidden=true;const msg=$('#missing-video');msg.hidden=false;msg.textContent='This video could not be played. The file may be damaged, still deploying, or encoded in a format your browser cannot read. Please contact your administrator to replace or re-export the video.';};
  if(!$('#video-dialog').open)$('#video-dialog').showModal();
 }
 function closeLesson(){const player=$('#training-player');player.pause();player.removeAttribute('src');player.load();$('#video-dialog').close()}
