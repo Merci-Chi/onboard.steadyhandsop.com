@@ -4,9 +4,7 @@ const lessons=[
  {title:'Introduction + Training Disclaimer',description:'Welcome to Steady Hands and important information about the fictional examples shown.',video:'App-Tutorial Videos/00-Introduction-and-Disclaimer.mp4',icon:'▶'},
  {title:'Getting Started with Outreach',description:'Navigate the app, select leads, and understand the Outreach page.',video:'App-Tutorial Videos/01-Getting-Started-with-Outreach.mp4',icon:'⌕'},
  {title:'Making Calls',description:'Call screens, scripts, notes, templates, and live transcripts.',video:'App-Tutorial Videos/02-Making-Calls.mp4',icon:'☎'},
- {title:'Follow-Ups & Scheduling',description:'Schedule callbacks, reminders, and calendar events.',video:'App-Tutorial Videos/03-Follow-Ups-and-Scheduling.mp4',icon:'▦'},
- {title:'Earnings & Progress',description:'Understand commissions, bonuses, and payment stages.',video:'App-Tutorial Videos/04-Earnings-and-Progress.mp4',icon:'$'},
- {title:'Activity & Call History',description:'Review previous calls, notes, callbacks, and account activity.',video:'App-Tutorial Videos/05-Activity-and-Call-History.mp4',icon:'◷'}
+ {title:'Follow-Ups & Scheduling',description:'Schedule callbacks, reminders, and calendar events.',video:'App-Tutorial Videos/03-Follow-Ups-and-Scheduling.mp4',icon:'▦'}
 ];
 let completed=new Set(),activeIndex=0,user;
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,7 +19,7 @@ function render(){
 async function openLesson(i){
  activeIndex=i;
  const player=$('#training-player');player.pause();player.removeAttribute('src');player.load();
- const lesson=lessons[i];$('#video-number').textContent=`LESSON ${String(i).padStart(2,'0')} OF 06`;
+ const lesson=lessons[i];$('#video-number').textContent=`LESSON ${String(i).padStart(2,'0')} OF ${String(lessons.length).padStart(2,'0')}`;
  $('#video-title').textContent=lesson.title;$('#video-description').textContent=lesson.description;
  $('#video-previous').disabled=i===0;$('#video-next').disabled=i===lessons.length-1;
  $('#video-complete').textContent=completed.has(i)?'✓ Completed':'Mark as completed ✓';
