@@ -455,3 +455,7 @@
 .finish-install-label{display:block;margin:12px 0 7px;font-size:12px;font-weight:750;color:#234f7a}
 .finish-install audio{display:block;width:100%;max-width:100%;height:44px}
 .finish-install>div{min-width:0}
+
+/* Recorded completion outro audio */
+.training-finish-dialog audio.finish-audio{display:block;align-self:stretch;width:100%;max-width:100%;min-height:44px;height:45px}
+.training-finish-dialog .finish-outro-label{font-weight:800;font-size:13px;color:#244c78;margin-top:6px}
