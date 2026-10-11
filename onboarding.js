@@ -308,4 +308,17 @@ $('#back').onclick=async()=>{
 $('#success-training').onclick=()=>location.assign('training.html');
 $('#success-later').onclick=()=>$('#onboarding-success').close();
 $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('login.html')};
-(async()=>{try{const {data:{user:u},error}=await supabase.auth.getUser();if(error||!u){location.replace('login.html');return}user=u;$('#account-email').textContent=u.email||'';const saved=u.user_metadata?.steadyhands_onboarding;if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMethod==='applecash')state.paymentMethod='applepay';if(!state.country&&state.region)state.country='United States';if(Number(saved.onboardingVersion)!==5){if(![10,20].includes(Number(saved.weeklyHours))){state.weeklyHours=20;}state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';const oldStep=Number(saved.step)||0;step=state.complete?4:Math.max(0,Math.min(4,oldStep>=2?oldStep+1:oldStep));state.onboardingVersion=5;}else{step=state.complete?4:Math.max(0,Math.min(4,Number(saved.step)||0));}if(!state.email)state.email=u.email||''}else{state.name=u.user_metadata?.full_name||u.user_metadata?.name||'';state.email=u.email||''}$('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#loading').textContent='Unable to load your account. Please refresh and try again.';console.error(e)}})();
+(async()=>{try{const {data:{user:u},error}=await supabase.auth.getUser();if(error||!u){location.replace('login.html');return}user=u;$('#account-email').textContent=u.email||'';let saved=u.user_metadata?.steadyhands_onboarding;
+const {data:serverProgress,error:progressError}=await supabase.from('sh_employee_onboarding')
+  .select('status,reset_at').eq('user_id',u.id).maybeSingle();
+if(progressError)console.warn('Could not verify onboarding reset:',progressError.message);
+if(!progressError&&serverProgress?.reset_at){
+ const resetTime=new Date(serverProgress.reset_at).getTime();
+ const savedTime=saved?.updatedAt?new Date(saved.updatedAt).getTime():0;
+ if(Number.isFinite(resetTime)&&resetTime>savedTime&&serverProgress.status==='not_started'){
+   saved=null;
+   const {error:clearError}=await supabase.auth.updateUser({data:{steadyhands_onboarding:null}});
+   if(clearError)console.warn('Could not clear old onboarding metadata:',clearError.message);
+ }
+}
+if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMethod==='applecash')state.paymentMethod='applepay';if(!state.country&&state.region)state.country='United States';if(Number(saved.onboardingVersion)!==5){if(![10,20].includes(Number(saved.weeklyHours))){state.weeklyHours=20;}state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';const oldStep=Number(saved.step)||0;step=state.complete?4:Math.max(0,Math.min(4,oldStep>=2?oldStep+1:oldStep));state.onboardingVersion=5;}else{step=state.complete?4:Math.max(0,Math.min(4,Number(saved.step)||0));}if(!state.email)state.email=u.email||''}else{state.name=u.user_metadata?.full_name||u.user_metadata?.name||'';state.email=u.email||''}$('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#loading').textContent='Unable to load your account. Please refresh and try again.';console.error(e)}})();
