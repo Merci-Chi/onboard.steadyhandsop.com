@@ -265,7 +265,7 @@ async function signedAgreementPdfBlob(panel){
  const signatureY=y-94;
  commands.push('q 250 0 0 70 52 '+signatureY+' cm /Sig Do Q');
  y=signatureY-24;
- write('Role-specific acknowledgment; not a final employer-issued offer.',8,false,12);
+ 
  newPage();
  objects[catalog-1]='<< /Type /Catalog /Pages '+pages+' 0 R >>';
  objects[pages-1]='<< /Type /Pages /Kids ['+pagesList.map(i=>i+' 0 R').join(' ')+'] /Count '+pagesList.length+' >>';
