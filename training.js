@@ -13,6 +13,7 @@ function render(){
  $('#training-status').textContent=`${done} of ${lessons.length} lessons completed`;
  $('#training-percent').textContent=Math.round(done/lessons.length*100)+'%';
  $('#training-fill').style.width=done/lessons.length*100+'%';
+ $('#view-training-finish').hidden=done!==lessons.length;
  $('#training-grid').innerHTML=lessons.map((lesson,i)=>`<button class="training-lesson" type="button" data-lesson="${i}"><div class="lesson-art"><span class="lesson-icon">${escapeHtml(lesson.icon)}</span><span class="lesson-play">▶</span><span class="lesson-number">${String(i).padStart(2,'0')}</span></div><div class="lesson-meta"><strong>${escapeHtml(lesson.title)}</strong><p>${escapeHtml(lesson.description)}</p><span class="lesson-done ${completed.has(i)?'finished':''}">${completed.has(i)?'✓ Completed':'Watch video →'}</span></div></button>`).join('');
  $('#training-grid').querySelectorAll('[data-lesson]').forEach(b=>b.addEventListener('click',()=>openLesson(Number(b.dataset.lesson))));
 }
@@ -41,8 +42,21 @@ $('#video-previous').onclick=()=>openLesson(activeIndex-1);
 $('#video-next').onclick=()=>openLesson(activeIndex+1);
 $('#video-complete').onclick=async()=>{
  completed.add(activeIndex);render();$('#video-complete').textContent='✓ Completed';
- await saveProgress();if(completed.size===lessons.length){closeLesson();$('#training-finished').showModal()}
+ await saveProgress();if(completed.size===lessons.length){closeLesson();showFinish()}
 };
+const welcomeText="Congratulations! You've officially completed your Steady Hands onboarding and training! You're now one step closer to getting started with our team. An administrator will be in touch to guide you through the next steps, answer any remaining questions, and help ensure you're fully prepared to begin your role. In the meantime, feel free to revisit any of the training materials if you need a refresher. We're excited to have you joining Steady Hands LLC, and we look forward to seeing what you'll accomplish!";
+let speaking=false;
+function stopWelcomeAudio(){if('speechSynthesis' in window)window.speechSynthesis.cancel();speaking=false;$('#finish-audio').textContent='▶ Play welcome audio'}
+function showFinish(){stopWelcomeAudio();if(!$('#training-finished').open)$('#training-finished').showModal()}
+$('#view-training-finish').onclick=showFinish;
+$('#finish-audio').onclick=()=>{
+ if(!('speechSynthesis' in window)){$('#finish-audio-status').textContent='Audio narration is not available in this browser. You can read the message above.';return}
+ if(speaking){stopWelcomeAudio();return}
+ window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(welcomeText);utterance.rate=0.96;
+ utterance.onend=utterance.onerror=()=>{speaking=false;$('#finish-audio').textContent='▶ Replay welcome audio'};
+ window.speechSynthesis.speak(utterance);speaking=true;$('#finish-audio').textContent='■ Stop welcome audio';$('#finish-audio-status').textContent='Playing your welcome message…';
+};
+$('#training-finished').addEventListener('close',stopWelcomeAudio);
 $('#training-done-close').onclick=()=>$('#training-finished').close();
 $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('login.html')};
 (async()=>{
