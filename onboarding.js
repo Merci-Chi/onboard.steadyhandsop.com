@@ -82,7 +82,7 @@ function attachPhoneFormat(){
  }
 }
 function render(){
- const p=state.complete?100:Math.round(sections.map((_,i)=>i).filter(isComplete).length/sections.length*100);$('#percent').textContent=p+'%';$('#progress-fill').style.width=p+'%';
+ const p=Math.round(sections.map((_,i)=>i).filter(isComplete).length/sections.length*100);$('#percent').textContent=p+'%';$('#progress-fill').style.width=p+'%';
  $('#step-nav').innerHTML=sections.map((name,i)=>`<button class="step-item ${i===step?'active':''} ${isComplete(i)?'done':''}" data-step="${i}" type="button" title="${esc(name)}" ${state.complete?'aria-label="View '+esc(name)+' (read-only)"':''}><span class="step-circle">${isComplete(i)?'✓':i+1}</span><span class="step-text"><span class="step-index">${i+1}.</span> ${esc(name)}</span></button>`).join('');
  $('#step-counter').textContent=`STEP ${step+1} OF ${sections.length}`;$('#back').hidden=step===0;
  let returnButton=$('#return-review');if(returnButton){returnButton.hidden=!(state.complete&&step!==4);returnButton.textContent='← Back to completed overview';}$('#next').hidden=state.complete;$('#next').textContent=step===4?'Complete onboarding':'Save and continue →';$('#status').textContent='';$('#status').removeAttribute('role');document.querySelectorAll('.step-item').forEach(btn=>btn.addEventListener('click',()=>jumpToStep(Number(btn.dataset.step))));
@@ -455,7 +455,7 @@ $('#next').onclick=async()=>{
  saving=true;
  const button=$('#next');button.disabled=true;button.textContent='Saving…';
  const oldStep=step, oldComplete=state.complete;
- if(step===4){state.complete=true;state.completedAt=new Date().toISOString()}
+ if(step===4){if(!sections.every((_,i)=>isComplete(i))){showCompletionChecklist();button.disabled=false;render();return;}state.complete=true;state.completedAt=new Date().toISOString()}
  else step++;
  try{
   if(await persist()){
@@ -490,4 +490,11 @@ if(!progressError&&serverProgress?.reset_at){
    if(clearError)console.warn('Could not clear old onboarding metadata:',clearError.message);
  }
 }
-if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMethod==='applecash')state.paymentMethod='applepay';if(!state.country&&state.region)state.country='United States';if(Number(saved.onboardingVersion)!==5){if(![10,20].includes(Number(saved.weeklyHours))){state.weeklyHours=20;}state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';const oldStep=Number(saved.step)||0;step=state.complete?4:Math.max(0,Math.min(4,oldStep>=2?oldStep+1:oldStep));state.onboardingVersion=5;}else{step=state.complete?4:Math.max(0,Math.min(4,Number(saved.step)||0));}if(!state.email)state.email=u.email||''}else{state.name=u.user_metadata?.full_name||u.user_metadata?.name||'';state.email=u.email||''}$('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#loading').textContent='Unable to load your account. Please refresh and try again.';console.error(e)}})();
+if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMethod==='applecash')state.paymentMethod='applepay';if(!state.country&&state.region)state.country='United States';if(Number(saved.onboardingVersion)!==5){if(![10,20].includes(Number(saved.weeklyHours))){state.weeklyHours=20;}state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';const oldStep=Number(saved.step)||0;step=state.complete?4:Math.max(0,Math.min(4,oldStep>=2?oldStep+1:oldStep));state.onboardingVersion=5;}else{step=state.complete?4:Math.max(0,Math.min(4,Number(saved.step)||0));}if(!state.email)state.email=u.email||''}else{state.name=u.user_metadata?.full_name||u.user_metadata?.name||'';state.email=u.email||''}if(state.complete&&!sections.every((_,i)=>isComplete(i))){
+  state.complete=false;
+  state.completedAt='';
+  step=sections.findIndex((_,i)=>!isComplete(i));
+  const {error:correctionError}=await supabase.auth.updateUser({data:{steadyhands_onboarding:{...state,step,updatedAt:new Date().toISOString()}}});
+  if(correctionError)console.warn('Could not synchronize incomplete onboarding:',correctionError.message);
+ }
+ $('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#loading').textContent='Unable to load your account. Please refresh and try again.';console.error(e)}})();
