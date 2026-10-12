@@ -83,9 +83,9 @@ function attachPhoneFormat(){
 }
 function render(){
  const p=state.complete?100:Math.round(sections.map((_,i)=>i).filter(isComplete).length/sections.length*100);$('#percent').textContent=p+'%';$('#progress-fill').style.width=p+'%';
- $('#step-nav').innerHTML=sections.map((name,i)=>`<button class="step-item ${i===step?'active':''} ${isComplete(i)?'done':''}" data-step="${i}" type="button" title="${esc(name)}" ${state.complete?'disabled':''}><span class="step-circle">${isComplete(i)?'✓':i+1}</span><span class="step-text"><span class="step-index">${i+1}.</span> ${esc(name)}</span></button>`).join('');
- $('#step-counter').textContent=`STEP ${step+1} OF ${sections.length}`;$('#back').hidden=step===0||state.complete;
- let returnButton=$('#return-review');if(returnButton)returnButton.hidden=true;$('#next').hidden=state.complete;$('#next').textContent=step===4?'Complete onboarding':'Save and continue →';$('#status').textContent='';$('#status').removeAttribute('role');document.querySelectorAll('.step-item').forEach(btn=>btn.addEventListener('click',()=>jumpToStep(Number(btn.dataset.step))));
+ $('#step-nav').innerHTML=sections.map((name,i)=>`<button class="step-item ${i===step?'active':''} ${isComplete(i)?'done':''}" data-step="${i}" type="button" title="${esc(name)}" ${state.complete?'aria-label="View '+esc(name)+' (read-only)"':''}><span class="step-circle">${isComplete(i)?'✓':i+1}</span><span class="step-text"><span class="step-index">${i+1}.</span> ${esc(name)}</span></button>`).join('');
+ $('#step-counter').textContent=`STEP ${step+1} OF ${sections.length}`;$('#back').hidden=step===0;
+ let returnButton=$('#return-review');if(returnButton){returnButton.hidden=!(state.complete&&step!==4);returnButton.textContent='← Back to completed overview';}$('#next').hidden=state.complete;$('#next').textContent=step===4?'Complete onboarding':'Save and continue →';$('#status').textContent='';$('#status').removeAttribute('role');document.querySelectorAll('.step-item').forEach(btn=>btn.addEventListener('click',()=>jumpToStep(Number(btn.dataset.step))));
  if(step===0)mark(`<p class="eyebrow">WELCOME TO THE TEAM</p><h1>Let's get you started.</h1><p class="lead">Welcome to Steady Hands LLC. This short onboarding walks you through your information, company orientation, and the next steps for your role.</p><div class="hero-graphic"><img src="images/background2.jpg" alt=""><div><span>STEADY HANDS LLC</span><h2>Great work starts with a steady hand.</h2></div></div><section class="welcome-narration" aria-label="Welcome audio narration"><div class="welcome-audio-heading"><span class="welcome-audio-icon" aria-hidden="true"><img src="images/audio-speaker.svg" alt=""></span><div><strong>Welcome message</strong><small>Listen to your introduction before beginning onboarding.</small></div></div><audio controls preload="metadata" src="audios/Intro.mp3" aria-label="Steady Hands LLC welcome narration">Your browser does not support audio playback. <a href="audios/Intro.mp3">Listen to the welcome message</a>.</audio></section><div class="info-strip"><strong>About 10 minutes</strong><span>Five easy steps · Progress saved</span></div>`);
  if(step===1){
   mark(`<p class="eyebrow">ABOUT YOU</p><h1>Your Information</h1><p class="lead">Please confirm your information before continuing. Required fields are marked *.</p><div class="field-grid">${field('Full legal name *','full-name','text',state.name,'autocomplete="name" maxlength="120" required')}${field('Email address *','email','email',state.email||user?.email||'','autocomplete="email" placeholder="name@example.com" required')}${field('Phone number *','phone','tel',state.phone,'autocomplete="tel" maxlength="45" required')}${field('Country of residence *','country','text',state.country,'autocomplete="country-name" maxlength="100" placeholder="e.g. United States or Canada" required')}${field('State / Province of residence *','region','text',state.region,'autocomplete="address-level1" maxlength="100" placeholder="e.g. Nevada or Ontario" required')}</div><div class="role-group"><h3>Position you're joining <span class="required-star">*</span></h3><p class="hint">Only positions accepting new team members can be selected.</p><div class="role-options">${roles.map(([title,open])=>`<label class="role-choice ${open?'':'is-full'}"><input type="radio" name="team-role" value="${esc(title)}" ${state.role===title?'checked':''} ${open?'':'disabled'}><span>${esc(title)}${title==='Sales Associate'?'<small class="trial-tag">2-Week Paid Trial</small>':''}</span><small class="${open?'':'full-badge'}">${open?'Available':'Unavailable'}</small></label>`).join('')}</div></div><p class="hint">Additional information required for payroll will be collected separately through a secure process.</p>`);
@@ -135,6 +135,22 @@ function render(){
  }
  previousStepWarning='';
  attachPhoneFormat();
+ if(state.complete){
+  const area=$('#step-content');
+  area.querySelectorAll('input, textarea, select, button:not(#download-signed-agreement)').forEach(el=>{el.disabled=true;});
+  const canvas=area.querySelector('#agreement-signature');
+  if(canvas){canvas.style.pointerEvents='none';canvas.setAttribute('aria-disabled','true');}
+  const message=document.createElement('p');
+  message.className='readonly-banner';
+  message.textContent='View only · Your onboarding is complete. Saved answers cannot be changed.';
+  area.prepend(message);
+  if(step===3){
+   const download=area.querySelector('#download-signed-agreement');
+   if(download)download.disabled=!isComplete(3);
+   const note=area.querySelector('#agreement-download-status');
+   if(note)note.textContent=isComplete(3)?'You can download your signed agreement.':'No completed signed agreement is available for download.';
+  }
+ }
  $('#step-content').addEventListener('input',()=>{if($('#status').getAttribute('role')==='alert'){collectDraft();showIssues(step)}},{passive:true});
  $('#step-content').addEventListener('change',()=>{if($('#status').getAttribute('role')==='alert'){collectDraft();showIssues(step)}},{passive:true});
 }
@@ -298,7 +314,7 @@ async function downloadSignedAgreement(){
  const button=$('#download-signed-agreement'),status=$('#agreement-download-status');
  if(!button||!status)return;
  if(![0,1,2].every(isComplete)){status.textContent='Complete the first three steps before downloading.';return;}
- collectDraft();
+ if(!state.complete)collectDraft();
  if(!isComplete(3)){status.textContent='Read and acknowledge the agreement, then draw your signature before downloading.';return;}
  const panel=$('#step-content .document-panel');
  if(!panel){status.textContent='Agreement is unavailable.';return;}
@@ -410,7 +426,8 @@ async function navigateToMissing(target,fieldId,showErrors=true){
 }
 $('#completion-close').addEventListener('click',()=>$('#completion-dialog').close());
 async function jumpToStep(target){
- if(saving||state.complete||target===step||target<0||target>=sections.length)return;
+ if(saving||target===step||target<0||target>=sections.length)return;
+ if(state.complete){step=target;render();window.scrollTo(0,0);return;}
  collectDraft();
  const pending=issues(step);
  if(target>step && pending.length && !await askAboutIncomplete()){showIssues(step);return;}
@@ -449,12 +466,14 @@ $('#next').onclick=async()=>{
  finally{saving=false;button.disabled=false}
 };
 $('#back').onclick=async()=>{
- if(saving||step===0||state.complete)return;
+ if(saving||step===0)return;
+ if(state.complete){step--;render();window.scrollTo(0,0);return;}
  collectDraft();saving=true;$('#back').disabled=true;
  const previous=step;step--;
  if(await persist()){render();window.scrollTo(0,0)}else{step=previous;render()}
  saving=false;$('#back').disabled=false;
 };
+$('#return-review').onclick=()=>{if(!state.complete)return;step=4;render();window.scrollTo(0,0)};
 $('#success-training').onclick=()=>location.assign('training.html');
 $('#success-later').onclick=()=>$('#onboarding-success').close();
 $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('login.html')};
