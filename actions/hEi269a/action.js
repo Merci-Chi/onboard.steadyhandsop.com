@@ -47,16 +47,66 @@ async function downloadPDF(){
  }catch(e){message('Could not download saved PDF: '+e.message);}
 }
 $('download').onclick=downloadPDF;
-async function authView(){const yes=!!session;$('signin').hidden=yes;$('choice-form').hidden=!yes;if(!yes)return;
- const {data,error}=await db.from('sh_associate_pause').select('status,action_code,agreement_storage_path,signed_at').eq('user_id',session.user.id).maybeSingle();
- if(error){message('Unable to check action status: '+error.message);return;}
+async function authView(){
+ const yes=!!session;
+ $('signin').hidden=yes;
+ $('choice-form').hidden=!yes;
+ $('review').hidden=true;
+ $('success').hidden=true;
+ if(!yes)return;
+ // Pause status is intentionally not an authorization gate on this agreement page:
+ // paused associates must still be able to sign their required action.
+ const {data,error}=await db.from('sh_associate_pause')
+  .select('status,action_code,agreement_storage_path,signed_at')
+  .eq('user_id',session.user.id).maybeSingle();
+ if(error){
+   // A missing SELECT grant or RLS policy should not make an otherwise valid
+   // Supabase login look unsuccessful or prevent submission of the agreement.
+   console.warn('Agreement status lookup unavailable:',error);
+   message('Signed in successfully. You can complete the agreement. If you have already signed, contact your coordinator to retrieve the saved copy.');
+   return;
+ }
  if(data?.action_code==='hEi269a' && data?.agreement_storage_path && data?.status==='active'){
- storedPath=data.agreement_storage_path;signedAt=data.signed_at;$('choice-form').hidden=true;$('review').hidden=true;$('success').hidden=false;
- message('Your saved agreement is available for download.');
+   storedPath=data.agreement_storage_path;signedAt=data.signed_at;
+   $('choice-form').hidden=true;$('success').hidden=false;
+   message('Your saved agreement is available for download.');
+ } else {
+   storedPath='';signedAt=null;
+   message('Signed in. Complete your required action.');
  }
 }
-const response=await db.auth.getSession();session=response.data?.session||null;await authView();
-$('signin').onsubmit=async ev=>{ev.preventDefault();message('Signing in…');const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){message(error.message);return;}session=data.session;await authView();if(!$('success').hidden)return;message('Signed in. Complete your required action.');};
+async function initializeAuth(){
+ try{
+   const {data,error}=await db.auth.getSession();
+   if(error)throw error;
+   session=data?.session||null;
+   await authView();
+ }catch(error){
+   console.error('Agreement login initialization failed:',error);
+   session=null;$('signin').hidden=false;$('choice-form').hidden=true;
+   message('Unable to restore your saved login. Please sign in with your Outreach email and password. '+(error.message||''));
+ }
+}
+$('signin').onsubmit=async ev=>{
+ ev.preventDefault();
+ const button=$('signin').querySelector('button[type="submit"]');
+ button.disabled=true;
+ message('Signing in…');
+ try{
+   const {data,error}=await db.auth.signInWithPassword({
+     email:$('email').value.trim(),
+     password:$('password').value
+   });
+   if(error)throw error;
+   if(!data?.session)throw new Error('No session was returned. Please try again.');
+   session=data.session;
+   $('password').value='';
+   await authView();
+ }catch(error){
+   message('Could not sign in: '+(error.message||error)+'. Use the same email and password as Outreach.');
+ }finally{button.disabled=false;}
+};
+await initializeAuth();
 $('choice-form').onsubmit=e=>{e.preventDefault();if(!drawn){message('Please draw your signature.');return;}if(!$('read').checked){message('Read and acknowledge the notice first.');return;}selection=new FormData(e.target).get('track');legalName=$('signature-name').value.trim();signatureDate=dateInput.value;if(!signatureDate){message('Enter the date of your signature.');return;}if(!selection||legalName.length<3){message('Choose a track and enter your full legal name.');return;}signature=canvas.toDataURL('image/png');$('agreement').innerHTML=agreementHTML();$('choice-form').hidden=true;$('review').hidden=false;message('');window.scrollTo({top:0,behavior:'smooth'});};
 $('back').onclick=()=>{$('review').hidden=true;$('choice-form').hidden=false;};
 $('confirm').onclick=async()=>{
