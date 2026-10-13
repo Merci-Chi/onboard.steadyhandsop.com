@@ -41,6 +41,35 @@ const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function agreementHTML(){const t=tracks(selection);return `<h3>Steady Hands LLC · Associate Track Agreement</h3><p><b>Associate:</b> ${esc(legalName)}</p><p><b>Selected track:</b> ${esc(t.title)}</p><p><b>Terms:</b></p><ul>${t.terms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="small">Qualified sales and bonuses are subject to the full notice. The signed choice does not replace applicable employment law or any separately required employment agreement.</p><p><b>Electronic signature:</b></p><img src="${signature}" alt="Drawn electronic signature"><p><b>Printed name:</b> ${esc(legalName)}</p><p><b>Date entered:</b> ${esc(signatureDate)}</p><p><b>Official submission timestamp:</b> ${signedAt?esc(new Date(signedAt).toLocaleString()):'To be recorded upon submission'}</p>`;}
 const BUCKET='sh-signed-agreements';
 let storedPath='', savedBlob=null;
+// Safari or privacy filters may block a particular CDN. Try alternate hosts
+// before creating any pending agreement record.
+let pdfLoadPromise=null;
+async function ensurePDFLibrary(){
+ if(window.jspdf?.jsPDF)return;
+ if(!pdfLoadPromise)pdfLoadPromise=(async()=>{
+  const urls=[
+   'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+   'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
+   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js'
+  ];
+  for(const url of urls){
+   if(window.jspdf?.jsPDF)return;
+   try{
+    await new Promise((resolve,reject)=>{
+     const tag=document.createElement('script');
+     const timeout=setTimeout(()=>{tag.remove();reject(new Error('PDF download timed out'));},6500);
+     tag.src=url;tag.async=true;
+     tag.onload=()=>{clearTimeout(timeout);resolve();};
+     tag.onerror=()=>{clearTimeout(timeout);tag.remove();reject(new Error('PDF library host blocked'));};
+     document.head.appendChild(tag);
+    });
+    if(window.jspdf?.jsPDF)return;
+   }catch(err){console.warn('PDF fallback:',url,err);}
+  }
+  throw new Error('PDF generation could not load. Check Safari content blockers or network settings, then try again.');
+ })().catch(err=>{pdfLoadPromise=null;throw err;});
+ return pdfLoadPromise;
+}
 function buildPDF(){
  const jsPDF=window.jspdf?.jsPDF;
  if(!jsPDF)throw new Error('PDF library is unavailable. Check your connection and try again.');
@@ -140,6 +169,8 @@ $('confirm').onclick=async()=>{
  if(!session){message('Sign in again.');return;}
  const btn=$('confirm');btn.disabled=true;
  try{
+  message('Loading PDF generator…');
+  await ensurePDFLibrary();
   message('Preparing signed agreement…');
   const {data:prepared,error:prepareError}=await db.rpc('sh_prepare_signed_agreement',{
    p_track:selection,p_signature_name:legalName,p_signature_png:signature,p_acknowledged:true
