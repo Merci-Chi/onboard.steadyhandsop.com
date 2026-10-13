@@ -1,8 +1,9 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const db=createClient('https://glonbvrcudwuzjundrii.supabase.co','sb_publishable_VZbed_uuOXSE744UrAfHXw_z2xDdYtr',{auth:{persistSession:true,autoRefreshToken:true}});
 const $=id=>document.getElementById(id),message=s=>$('msg').textContent=s;
-let session=null,drawn=false,drawing=false,signature='',selection='',legalName='',signedAt=null;
+let session=null,drawn=false,drawing=false,signature='',selection='',legalName='',signedAt=null,signatureDate='';
 const canvas=$('signature'),ctx=canvas.getContext('2d');
+const dateInput=$('signature-date');dateInput.value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 function resize(){const old=drawn?canvas.toDataURL('image/png'):null;canvas.width=Math.round(canvas.getBoundingClientRect().width*devicePixelRatio);canvas.height=Math.round(190*devicePixelRatio);ctx.scale(devicePixelRatio,devicePixelRatio);ctx.strokeStyle='#102945';ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';if(old){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,canvas.clientWidth,190);im.src=old;}}
 resize();window.addEventListener('resize',()=>{if(!drawing)resize()});
 function point(ev){const r=canvas.getBoundingClientRect();return{x:ev.clientX-r.left,y:ev.clientY-r.top};}
@@ -12,7 +13,7 @@ for(const event of ['pointerup','pointercancel'])canvas.addEventListener(event,(
 $('clear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);drawn=false;};
 function tracks(t){return t==='trial'?{title:'Option 1: 2 week performance trial',terms:['$12/hr for up to 10 hours per week.','$30 commission for each qualified sale.','$100 bonus for 5 qualified sales; $250 bonus for 10 qualified sales.','Minimum 25 outbound call attempts per hour during scheduled work hours.', 'Minimum 3 qualified sales per week. Failure may result in evaluation of continued eligibility.']}:{title:'Option 2: Commission specialist',terms:['$30 commission for each qualified sale.','$100 bonus for 5 qualified sales; $250 bonus for 10 qualified sales.','No minimum sales requirement. Two sales per week is encouraged, not required.']};}
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function agreementHTML(){const t=tracks(selection);return `<h3>Steady Hands LLC · Associate Track Agreement</h3><p><b>Associate:</b> ${esc(legalName)}</p><p><b>Selected track:</b> ${esc(t.title)}</p><p><b>Terms:</b></p><ul>${t.terms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="small">Qualified sales and bonuses are subject to the full notice. The signed choice does not replace applicable employment law or any separately required employment agreement.</p><p><b>Electronic signature:</b></p><img src="${signature}" alt="Drawn electronic signature"><p><b>Printed name:</b> ${esc(legalName)}</p><p><b>Date:</b> ${signedAt?esc(new Date(signedAt).toLocaleString()):'To be recorded upon submission'}</p>`;}
+function agreementHTML(){const t=tracks(selection);return `<h3>Steady Hands LLC · Associate Track Agreement</h3><p><b>Associate:</b> ${esc(legalName)}</p><p><b>Selected track:</b> ${esc(t.title)}</p><p><b>Terms:</b></p><ul>${t.terms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="small">Qualified sales and bonuses are subject to the full notice. The signed choice does not replace applicable employment law or any separately required employment agreement.</p><p><b>Electronic signature:</b></p><img src="${signature}" alt="Drawn electronic signature"><p><b>Printed name:</b> ${esc(legalName)}</p><p><b>Date entered:</b> ${esc(signatureDate)}</p><p><b>Official submission timestamp:</b> ${signedAt?esc(new Date(signedAt).toLocaleString()):'To be recorded upon submission'}</p>`;}
 const BUCKET='sh-signed-agreements';
 let storedPath='', savedBlob=null;
 function buildPDF(){
@@ -27,7 +28,7 @@ function buildPDF(){
  line('Associate: '+legalName);line('Selected track: '+tracks(selection).title);
  for(const term of tracks(selection).terms)line('- '+term);
  line('I have read the full notice and electronically agree to my selected track.');
- line('Signed on (Supabase server time): '+new Date(signedAt).toISOString());
+ line('Signature date entered: '+signatureDate);line('Signed on (Supabase server time): '+new Date(signedAt).toISOString());
  line('Required action: hEi269a');
  if(y>225)pdf.addPage(),y=24;
  pdf.addImage(signature,'PNG',18,y+2,82,30);pdf.text('Drawn signature: '+legalName,18,y+42);
@@ -56,7 +57,7 @@ async function authView(){const yes=!!session;$('signin').hidden=yes;$('choice-f
 }
 const response=await db.auth.getSession();session=response.data?.session||null;await authView();
 $('signin').onsubmit=async ev=>{ev.preventDefault();message('Signing in…');const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){message(error.message);return;}session=data.session;await authView();if(!$('success').hidden)return;message('Signed in. Complete your required action.');};
-$('choice-form').onsubmit=e=>{e.preventDefault();if(!drawn){message('Please draw your signature.');return;}if(!$('read').checked){message('Read and acknowledge the notice first.');return;}selection=new FormData(e.target).get('track');legalName=$('signature-name').value.trim();if(!selection||legalName.length<3){message('Choose a track and enter your full legal name.');return;}signature=canvas.toDataURL('image/png');$('agreement').innerHTML=agreementHTML();$('choice-form').hidden=true;$('review').hidden=false;message('');window.scrollTo({top:0,behavior:'smooth'});};
+$('choice-form').onsubmit=e=>{e.preventDefault();if(!drawn){message('Please draw your signature.');return;}if(!$('read').checked){message('Read and acknowledge the notice first.');return;}selection=new FormData(e.target).get('track');legalName=$('signature-name').value.trim();signatureDate=dateInput.value;if(!signatureDate){message('Enter the date of your signature.');return;}if(!selection||legalName.length<3){message('Choose a track and enter your full legal name.');return;}signature=canvas.toDataURL('image/png');$('agreement').innerHTML=agreementHTML();$('choice-form').hidden=true;$('review').hidden=false;message('');window.scrollTo({top:0,behavior:'smooth'});};
 $('back').onclick=()=>{$('review').hidden=true;$('choice-form').hidden=false;};
 $('confirm').onclick=async()=>{
  if(!$('agree').checked){message('Confirm your agreement first.');return;}
