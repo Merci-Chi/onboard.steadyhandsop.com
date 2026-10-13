@@ -1,25 +1,51 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102a56"><title>Welcome | Steady Hands Onboarding</title><link rel="icon" href="images/logo.png"><link rel="stylesheet" href="styles.css?v=20261011-signature"></head><body class="onboard-body"><header class="topbar"><div class="brand"><img src="images/logo.png" alt=""><div><img class="header-wordmark" src="images/wordmark-white.png" alt="Steady Hands"><small>TEAM ONBOARDING</small></div></div><div class="header-right"><span id="account-email"></span><button id="logout" class="outline-button">Sign out</button></div></header><div class="onboard-layout" id="private-app"><main class="mainpanel"><div class="loading" id="loading" role="status" aria-live="polite" style="max-width:680px;margin:64px auto;padding:28px 24px;background:#fff;border:1px solid #dae4ef;border-radius:16px;color:#18314c;text-align:center">Loading your onboarding… <button type="button" id="onboard-retry" hidden style="display:none;margin:18px auto 0;padding:10px 18px;border-radius:9px;border:1px solid #94aac0;background:#102945;color:white;cursor:pointer" onclick="location.reload()">Try again</button></div><div id="content" hidden><div class="progress-overview"><div class="meter-label"><span>Your onboarding progress</span><b id="percent">0%</b></div><div class="progress-track"><div id="progress-fill"></div></div><nav class="steps" id="step-nav" aria-label="Onboarding progress"></nav></div><div class="step-meta"><span id="step-counter">STEP 1 OF 5</span><span class="secure-chip">Steady Hands Team</span></div><div class="main-card"><div id="step-content"></div><div class="actions"><button id="back" class="secondary-button" type="button">Back</button><button id="return-review" type="button" class="secondary-button" hidden>← Return to review</button><button id="next" class="primary-button" type="button">Save and continue →</button></div><p id="status" aria-live="polite"></p></div><p class="footer-note">Steady Hands LLC · Welcome to the team.</p></div></main></div><dialog id="incomplete-dialog" class="incomplete-dialog" aria-labelledby="incomplete-title" aria-describedby="incomplete-description"><div class="incomplete-dialog-inner"><div class="incomplete-dialog-symbol" aria-hidden="true">!</div><h2 id="incomplete-title">A few details are still missing</h2><p id="incomplete-description">You haven't finished everything in this section. Would you like to complete it now or save your progress and come back later?</p><div class="incomplete-dialog-actions"><button id="incomplete-finish" class="primary-button" type="button">Finish Now</button><button id="incomplete-later" class="secondary-button" type="button">Save &amp; Continue</button></div></div></dialog><dialog id="completion-dialog" class="completion-dialog" aria-labelledby="completion-title" aria-describedby="completion-description"><div class="completion-dialog-inner"><div class="completion-dialog-header"><div class="completion-symbol" aria-hidden="true">!</div><div><h2 id="completion-title">Almost there!</h2><p id="completion-description">A few things still need your attention before you can finish onboarding. Select an item to go straight to it.</p><span id="completion-count" class="completion-count"></span></div></div><div id="completion-missing" class="completion-missing"></div><div class="completion-dialog-footer"><p>Your saved answers will be kept while you finish these items.</p><button id="completion-close" class="secondary-button" type="button">Close for Now</button></div></div></dialog><dialog id="submit-confirm" class="incomplete-dialog" aria-labelledby="submit-confirm-title"><div class="incomplete-dialog-inner"><div class="incomplete-dialog-symbol" aria-hidden="true">✓</div><h2 id="submit-confirm-title">Ready to submit?</h2><p>You have completed all required sections. Please confirm your information is accurate before submitting onboarding.</p><div class="incomplete-dialog-actions"><button id="submit-cancel" class="secondary-button" type="button">Review again</button><button id="submit-yes" class="primary-button" type="button">Confirm &amp; Submit</button></div></div></dialog><dialog id="onboarding-success" class="success-dialog" aria-labelledby="success-heading"><div class="success-inner"><div class="success-icon">✓</div><h2 id="success-heading">Onboarding Complete!</h2><p>Welcome to the Steady Hands team! You've successfully completed your onboarding.</p><p>You're ready to begin learning how to use the Outreach app.</p><button id="success-training" class="primary-button" type="button">Continue to Training →</button><button id="success-later" class="secondary-button" type="button">Visit later</button></div></dialog><script>
-(function(){
- var booted=false;
- var box=document.getElementById('loading');
- var retry=document.getElementById('onboard-retry');
- function failure(message){
-  if(!box||document.getElementById('content')?.hidden===false)return;
-  box.hidden=false;
-  box.style.display='block';
-  box.firstChild.textContent=message+' ';
-  if(retry){retry.hidden=false;retry.style.display='block';}
- }
- window.addEventListener('error',function(event){
-  if(document.getElementById('content')?.hidden!==false && /script|module|onboarding|supabase|load/i.test(String(event.message||event.filename||''))){
-   failure('The onboarding page could not finish loading. Please try again.');
-  }
- });
- window.addEventListener('unhandledrejection',function(){
-  if(document.getElementById('content')?.hidden!==false)failure('An onboarding service did not respond. Please try again.');
- });
- setTimeout(function(){
-  if(document.getElementById('content')?.hidden!==false)failure('Onboarding is taking longer than expected. Check your connection and try again.');
- },15000);
-})();
-</script><script type="module" src="onboarding.js?v=20261013-visible-load-retry"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102945">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Onboarding Closed | Steady Hands</title>
+  <link rel="icon" href="images/logo.png">
+  <style>
+    :root { color-scheme: light; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+    * {box-sizing:border-box}
+    body {margin:0;min-height:100vh;background:linear-gradient(155deg,#e9f1fb,#f7f9fc 58%,#eef3f9);color:#132740;display:flex;flex-direction:column}
+    header {background:#102945;color:white;padding:27px clamp(20px,5vw,72px);display:flex;align-items:center;gap:18px;border-bottom:3px solid #214870}
+    .logo {width:59px;height:59px;object-fit:contain}
+    .brand {display:flex;flex-direction:column;gap:4px}
+    .wordmark {width:min(265px,65vw);height:30px;object-fit:contain;object-position:left center}
+    .brand small {font-size:11px;letter-spacing:2.5px;font-weight:800;color:#b9d5ee}
+    main {width:100%;max-width:820px;margin:auto;padding:55px 22px}
+    .panel {text-align:center;background:#fff;border:1px solid #e0e8f0;border-radius:24px;padding:clamp(34px,6vw,67px);box-shadow:0 18px 50px rgba(15,42,72,.09)}
+    .icon {width:68px;height:68px;display:grid;place-items:center;border-radius:20px;background:#e8f2ff;color:#226bb4;margin:0 auto 24px}
+    h1 {font-size:clamp(30px,5vw,46px);line-height:1.15;letter-spacing:-1.2px;margin:0 0 20px;color:#102945}
+    p {font-size:16px;line-height:1.8;color:#52657c;margin:0 auto 20px;max-width:620px}
+    p.lead {font-size:18px;color:#30465f}
+    .rule {width:66px;height:3px;border-radius:3px;background:#2f8de6;margin:27px auto}
+    .notice {margin:28px auto 0;background:#f1f6fc;border:1px solid #dce9f7;border-radius:14px;padding:16px 20px;font-size:14px;line-height:1.6;color:#52657c}
+    footer {text-align:center;font-size:12px;color:#71839a;padding:12px 20px 30px}
+    @media(max-width:540px){header{padding:20px}.logo{width:46px;height:46px}.wordmark{height:24px}.panel{border-radius:18px}main{padding:25px 16px}p{font-size:15px}}
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="images/logo.png" alt="">
+    <div class="brand"><img class="wordmark" src="images/wordmark-white.png" alt="Steady Hands Operations"><small>TEAM ONBOARDING</small></div>
+  </header>
+  <main>
+    <section class="panel" aria-labelledby="closed-title">
+      <div class="icon" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M9 12h6M9 16h4"/></svg>
+      </div>
+      <h1 id="closed-title">Onboarding Closed</h1>
+      <p class="lead">Thank you for your interest in joining Steady Hands Operations.</p>
+      <p>We have reached our hiring capacity for this cycle, and our onboarding portal is currently closed.</p>
+      <div class="rule"></div>
+      <p>If you have already completed onboarding and have an active shift scheduled, please refer to your direct communications with management.</p>
+      <div class="notice">For all other inquiries, please contact management directly.</div>
+    </section>
+  </main>
+  <footer>© 2026 Steady Hands LLC · All rights reserved.</footer>
+</body>
+</html>
