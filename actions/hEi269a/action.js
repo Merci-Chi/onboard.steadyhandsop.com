@@ -4,13 +4,38 @@ const $=id=>document.getElementById(id),message=s=>$('msg').textContent=s;
 let session=null,drawn=false,drawing=false,signature='',selection='',legalName='',signedAt=null,signatureDate='';
 const canvas=$('signature'),ctx=canvas.getContext('2d');
 const dateInput=$('signature-date');dateInput.value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-function resize(){const old=drawn?canvas.toDataURL('image/png'):null;canvas.width=Math.round(canvas.getBoundingClientRect().width*devicePixelRatio);canvas.height=Math.round(190*devicePixelRatio);ctx.scale(devicePixelRatio,devicePixelRatio);ctx.strokeStyle='#102945';ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';if(old){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,canvas.clientWidth,190);im.src=old;}}
-resize();window.addEventListener('resize',()=>{if(!drawing)resize()});
-function point(ev){const r=canvas.getBoundingClientRect();return{x:ev.clientX-r.left,y:ev.clientY-r.top};}
-canvas.addEventListener('pointerdown',e=>{drawing=true;canvas.setPointerCapture(e.pointerId);const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.1,p.y+.1);ctx.stroke();drawn=true;});
-canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
-for(const event of ['pointerup','pointercancel'])canvas.addEventListener(event,()=>drawing=false);
-$('clear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);drawn=false;};
+function resize(){
+ const width=canvas.getBoundingClientRect().width;
+ if(width<1)return; // The form begins hidden; never create a zero-width signature pad.
+ const ratio=Math.max(1,window.devicePixelRatio||1);
+ const newW=Math.round(width*ratio),newH=Math.round(190*ratio);
+ if(canvas.width===newW&&canvas.height===newH)return;
+ const old=drawn&&canvas.width>0&&canvas.height>0?canvas.toDataURL('image/png'):null;
+ canvas.width=newW;canvas.height=newH;
+ ctx.setTransform(ratio,0,0,ratio,0,0);
+ ctx.strokeStyle='#102945';ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';
+ if(old){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,width,190);im.src=old;}
+}
+resize();
+window.addEventListener('resize',()=>{if(!drawing)resize()});
+if('ResizeObserver' in window)new ResizeObserver(()=>{if(!drawing)resize()}).observe(canvas);
+function point(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function startStroke(e){
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ resize();if(!canvas.width)return;
+ e.preventDefault();
+ drawing=true;
+ try{canvas.setPointerCapture(e.pointerId)}catch(_){}
+ const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.1,p.y+.1);ctx.stroke();drawn=true;
+}
+function moveStroke(e){if(!drawing)return;e.preventDefault();const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();}
+function endStroke(e){if(!drawing)return;drawing=false;try{if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId)}catch(_){}}
+canvas.addEventListener('pointerdown',startStroke);
+canvas.addEventListener('pointermove',moveStroke);
+canvas.addEventListener('pointerup',endStroke);
+canvas.addEventListener('pointercancel',endStroke);
+window.addEventListener('pointerup',endStroke);
+$('clear').onclick=()=>{resize();ctx.clearRect(0,0,canvas.width,canvas.height);drawn=false;};
 function tracks(t){return t==='trial'?{title:'Option 1: 2 week performance trial',terms:['$12/hr for up to 10 hours per week.','$30 commission for each qualified sale.','$100 bonus for 5 qualified sales; $250 bonus for 10 qualified sales.','Minimum 25 outbound call attempts per hour during scheduled work hours.', 'Minimum 3 qualified sales per week. Failure may result in evaluation of continued eligibility.']}:{title:'Option 2: Commission specialist',terms:['$30 commission for each qualified sale.','$100 bonus for 5 qualified sales; $250 bonus for 10 qualified sales.','No minimum sales requirement. Two sales per week is encouraged, not required.']};}
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function agreementHTML(){const t=tracks(selection);return `<h3>Steady Hands LLC · Associate Track Agreement</h3><p><b>Associate:</b> ${esc(legalName)}</p><p><b>Selected track:</b> ${esc(t.title)}</p><p><b>Terms:</b></p><ul>${t.terms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="small">Qualified sales and bonuses are subject to the full notice. The signed choice does not replace applicable employment law or any separately required employment agreement.</p><p><b>Electronic signature:</b></p><img src="${signature}" alt="Drawn electronic signature"><p><b>Printed name:</b> ${esc(legalName)}</p><p><b>Date entered:</b> ${esc(signatureDate)}</p><p><b>Official submission timestamp:</b> ${signedAt?esc(new Date(signedAt).toLocaleString()):'To be recorded upon submission'}</p>`;}
@@ -53,6 +78,7 @@ async function authView(){
  $('choice-form').hidden=!yes;
  $('review').hidden=true;
  $('success').hidden=true;
+ if(yes)requestAnimationFrame(resize);
  if(!yes)return;
  // Pause status is intentionally not an authorization gate on this agreement page:
  // paused associates must still be able to sign their required action.
