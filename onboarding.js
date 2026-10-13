@@ -497,4 +497,4 @@ if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMet
   const {error:correctionError}=await supabase.auth.updateUser({data:{steadyhands_onboarding:{...state,step,updatedAt:new Date().toISOString()}}});
   if(correctionError)console.warn('Could not synchronize incomplete onboarding:',correctionError.message);
  }
- $('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#loading').textContent='Unable to load your account. Please refresh and try again.';console.error(e)}})();
+ $('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#private-app').hidden=false;$('#loading').hidden=false;$('#loading').style.display='block';$('#loading').firstChild.textContent='Unable to load your account: '+(e?.message||'Please try again')+' ';const retry=document.getElementById('onboard-retry');if(retry){retry.hidden=false;retry.style.display='block'}console.error(e)}})();
