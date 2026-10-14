@@ -5,10 +5,10 @@ if(home){
  const $=id=>document.getElementById(id);
  const titles={
   'trial-hourly':'Agreement - Sales Associate Trial: Hourly Pay (10 hrs / Week)',
-  'trial-commission':'Agreement - Sales Associate Trial: Commission Pay',
+  'trial-commission':'Agreement - Sales Associate Trial: Commission Pay (10 hrs / Week)',
   'hourly-10':'Agreement - Sales Associate: Hourly Pay (10 hrs / Week)',
   'hourly-20':'Agreement - Sales Associate: Hourly Pay (20 hrs / Week)',
-  'commission':'Agreement - Sales Associate: Commission Pay',
+  'commission':'Agreement - Sales Associate: Commission Pay (10 hrs / Week)',
   'manager-10':'Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (10 hrs / Week)',
   'manager-20':'Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (20 hrs / Week)'
  };
