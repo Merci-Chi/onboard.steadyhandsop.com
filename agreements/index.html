@@ -31,7 +31,7 @@
 <footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261013-code-routing"></script><script type="module" src="/agreements/assigned-actions.js?v=20261013-passcode-list-fix"></script><script type="module">
 import {supabase} from '/supabase-client.js';
 const back=document.getElementById('agreement-back');
-const code=new URLSearchParams(location.search).get('code')||location.pathname.match(/^\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/)?.[1];
+const code=new URLSearchParams(location.search).get('code')||location.pathname.split('/').filter(Boolean).slice(1)[0]||'';
 if(!code)back.href='/index.html';
 document.getElementById('agreement-signout')?.addEventListener('click',async()=>{
  const button=document.getElementById('agreement-signout');button.disabled=true;button.textContent='Signing out…';
