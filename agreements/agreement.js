@@ -35,28 +35,30 @@ async function buildSignedPDF(raw,info){
  const ink=PDFLib.rgb(.07,.16,.29),white=PDFLib.rgb(1,1,1),accent=PDFLib.rgb(.08,.35,.57);
  const isManager=managerKind(assignment.document_key),trial=assignment.document_key.startsWith('trial-');
  const A=assignment;const associate=A.associate_name||info.name;
- const fit=(value,maxWidth,size=9)=>{let t=String(value||'');while(t.length>1&&font.widthOfTextAtSize(t,size)>maxWidth)t=t.slice(0,-2)+'…';return t;};
- // These are overlay coordinates matched to the actual supplied agreement PDFs.
- // y PDF coordinates are measured upward from the bottom edge.
- function field(page,x,top,w,label,value,size=9){const y=page.getHeight()-top;
-  page.drawRectangle({x,y:y-13,width:w,height:16,color:white});
-  page.drawText(fit(value,w-4,size),{x:x+2,y:y-9,size,font,color:ink});
+ const shortDate=value=>{const match=String(value||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return match?match[2]+'/'+match[3]+'/'+match[1].slice(2):String(value||'');};
+ const fit=(value,maxWidth,size=9)=>{let t=String(value||'').replace(/[^\\x20-\\x7e]/g,' ').trim();while(t.length&&font.widthOfTextAtSize(t,size)>maxWidth)t=t.slice(0,-1);return t;};
+ // Precisely cover only the empty underline, never the adjoining field labels.
+ // top is measured from the top of the A4 page in PDF points.
+ function field(page,x,top,w,value,size=9){
+  const y=page.getHeight()-top-14;
+  page.drawRectangle({x,y,width:w,height:15,color:white});
+  const valueText=fit(value,w-4,size);
+  page.drawText(valueText,{x:x+2,y:y+3,size,font,color:ink});
  }
  if(isManager){
-  field(first,174,115,178,'Associate',associate,9);
-  field(first,110,131,85,'Effective date',A.effective_date,8.8);
-  field(first,249,131,175,'Work location',A.work_location,8.5);
+  field(first,236,115,160,associate,9);
+  field(first,118,132,85,shortDate(A.effective_date),8.5);
+  field(first,275,132,151,A.work_location,8.5);
  }else{
-  field(first,238,115,250,'Associate',associate,9);
+  field(first,239,115,assignment.document_key.startsWith('trial-')?226:145,associate,9);
   if(trial){
-   field(first,111,140,85,'Trial start',A.effective_date,8.8);
-   // Trial end is deliberately calculated as 14 days from the start date.
    const endDate=new Date(A.effective_date+'T12:00:00Z');endDate.setUTCDate(endDate.getUTCDate()+13);
-   field(first,263,140,86,'Trial end',endDate.toISOString().slice(0,10),8.8);
-   field(first,463,140,116,'Work location',A.work_location,8);
+   field(first,101,140,77,shortDate(A.effective_date),8.5);
+   field(first,229,140,77,shortDate(endDate.toISOString().slice(0,10)),8.5);
+   field(first,454,140,75,A.work_location,8.2);
   }else{
-   field(first,112,140,103,'Start date',A.effective_date,8.8);
-   field(first,398,140,180,'Work location',A.work_location,8.5);
+   field(first,101,140,77,shortDate(A.effective_date),8.5);
+   field(first,326,140,98,A.work_location,8.5);
   }
  }
  const signTop=isManager?659:trial?504:assignment.document_key==='commission'?487:462;
@@ -66,13 +68,13 @@ async function buildSignedPDF(raw,info){
   const image=await doc.embedPng(imgBytes);
   const iw=image.width,ih=image.height,scale=Math.min(140/iw,25/ih);
   const y=last.getHeight()-signTop-12;
-  last.drawRectangle({x:153,y:y-4,width:148,height:30,color:white});
+  // The PNG retains alpha transparency: no white background or rectangle.
   last.drawImage(image,{x:154,y:y-1,width:iw*scale,height:ih*scale});
  }else{
   // Manager track is acknowledgment only; no drawn signature or contractual execution.
-  field(last,153,signTop,148,'Acknowledgment',info.name,8.5);
+  field(last,153,signTop,148,info.name,8.5);
  }
- field(last,dateX,signTop,96,'Date',info.date,9);
+ field(last,dateX,signTop,96,shortDate(info.date),9);
  // The complete audit certificate makes every saved value available even when
  // the underlying PDF's short underline is too narrow for the full details.
  const page=doc.addPage([595.28,841.89]);
