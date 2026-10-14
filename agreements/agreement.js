@@ -1,9 +1,9 @@
 import {supabase as db} from '../supabase-client.js';
 const $=id=>document.getElementById(id);let user=null,assignment=null,signedDoc=null,drawn=false,drawing=false;
 const KINDS={'trial-hourly':['2-Week Trial · 10-Hour Hourly','Sales-Associate-Trial-10-Hour-Hourly.pdf'],'trial-commission':['2-Week Trial · Commission','Sales-Associate-Trial-Commission.pdf'],'hourly-10':['Sales Associate · 10 Hours','Sales-Associate-Agreement-10-Hours.pdf'],'hourly-20':['Sales Associate · 20 Hours','Sales-Associate-Agreement-20-Hours.pdf'],'commission':['Sales Associate · Commission','Sales-Associate-Agreement-Commission.pdf'],'manager-10':['Sales Manager Track · 10 Hours (Acknowledgment)','Sales-Manager-Track-10-Hours.pdf'],'manager-20':['Sales Manager Track · 20 Hours (Acknowledgment)','Sales-Manager-Track-20-Hours.pdf']};
-const code=new URLSearchParams(location.search).get('code')?.trim()||'';
+const code=(new URLSearchParams(location.search).get('code')||location.pathname.match(/\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/)?.[1]||'').trim();
 const managerKind=k=>k==='manager-10'||k==='manager-20';
-const pdfURL=k=>'pdfs/'+KINDS[k][1];
+const pdfURL=k=>'/agreements/pdfs/'+KINDS[k][1];
 const status=(s,bad=false)=>{$('status').textContent=s;$('status').classList.toggle('error',bad)};
 function show(id){for(const x of ['signin','missing','sign','complete'])$(x).hidden=x!==id;}
 $('clock').textContent=new Date().getFullYear();

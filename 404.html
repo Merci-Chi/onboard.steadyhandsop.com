@@ -1,1 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Opening agreement…</title><script>const m=location.pathname.match(/^\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/);if(m){location.replace('/agreements/?code='+encodeURIComponent(m[1])+location.search.replace(/^\?/, '&')+location.hash)}</script></head><body><p>Page not found. <a href="/">Return to onboarding</a>.</p></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Opening agreement…</title></head><body><p>Opening your assigned agreement…</p><script>
+const m=location.pathname.match(/^\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/);
+if(m){location.replace('/agreements/?code='+encodeURIComponent(m[1])+location.search.replace(/^\?/,'&')+location.hash)}
+else{document.body.textContent='Page not found. Return to onboarding.';}
+</script></body></html>
