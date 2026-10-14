@@ -4,13 +4,13 @@ const home=document.documentElement.classList.contains('assignments-home');
 if(home){
  const $=id=>document.getElementById(id);
  const titles={
-  'trial-hourly':'2-Week Trial · 10-Hour Hourly',
-  'trial-commission':'2-Week Trial · Commission',
-  'hourly-10':'Sales Associate · 10 Hours',
-  'hourly-20':'Sales Associate · 20 Hours',
-  'commission':'Sales Associate · Commission',
-  'manager-10':'Sales Manager · 10 Hours',
-  'manager-20':'Sales Manager · 20 Hours'
+  'trial-hourly':'Agreement - Sales Associate Trial: Hourly Pay (10 hrs / Week)',
+  'trial-commission':'Agreement - Sales Associate Trial: Commission Pay (10 hrs / Week)',
+  'hourly-10':'Agreement - Sales Associate: Hourly Pay (10 hrs / Week)',
+  'hourly-20':'Agreement - Sales Associate: Hourly Pay (20 hrs / Week)',
+  'commission':'Agreement - Sales Associate: Commission Pay (10 hrs / Week)',
+  'manager-10':'Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (10 hrs / Week)',
+  'manager-20':'Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (20 hrs / Week)'
  };
  const completed=s=>s==='signed'||s==='acknowledged';
  const dash=$('assignedDashboard'),items=$('assignmentItems'),welcome=$('homeWelcome'),signIn=$('signin');
