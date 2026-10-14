@@ -1,9 +1,9 @@
 import {supabase as db} from '../supabase-client.js';
 const $=id=>document.getElementById(id);let user=null,assignment=null,signedDoc=null,drawn=false,drawing=false;
 const KINDS={'trial-hourly':['Agreement - Sales Associate Trial: Hourly Pay (10 hrs / Week)','Sales-Associate-Trial-10-Hour-Hourly.pdf'],'trial-commission':['Agreement - Sales Associate Trial: Commission Pay (10 hrs / Week)','Sales-Associate-Trial-Commission.pdf'],'hourly-10':['Agreement - Sales Associate: Hourly Pay (10 hrs / Week)','Sales-Associate-Agreement-10-Hours.pdf'],'hourly-20':['Agreement - Sales Associate: Hourly Pay (20 hrs / Week)','Sales-Associate-Agreement-20-Hours.pdf'],'commission':['Agreement - Sales Associate: Commission Pay (10 hrs / Week)','Sales-Associate-Agreement-Commission.pdf'],'manager-10':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (10 hrs / Week)','Sales-Manager-Outline-10-Hours.pdf'],'manager-20':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (20 hrs / Week)','Sales-Manager-Outline-20-Hours.pdf']};
-const code=new URLSearchParams(location.search).get('code')?.trim()||'';
+const code=(new URLSearchParams(location.search).get('code')||location.pathname.match(/\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/)?.[1]||'').trim();
 const managerKind=k=>k==='manager-10'||k==='manager-20';
-const pdfURL=k=>'pdfs/'+KINDS[k][1];
+const pdfURL=k=>'/agreements/pdfs/'+KINDS[k][1];
 const status=(s,bad=false)=>{$('status').textContent=s;$('status').classList.toggle('error',bad)};
 function show(id){for(const x of ['signin','missing','sign','complete'])$(x).hidden=x!==id;}
 $('clock').textContent=new Date().getFullYear();
@@ -100,7 +100,7 @@ async function buildSignedPDF(raw,info){
  return await doc.save();
 }
 async function pdfLib(){if(window.PDFLib)return;await new Promise((ok,fail)=>{const el=document.createElement('script');el.src='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';el.onload=ok;el.onerror=()=>fail(Error('Unable to load PDF signing library'));document.head.appendChild(el)});}
-function showCompleted(data){const ack=managerKind(data.document_key);$('completeTitle').textContent=ack?'Acknowledgment recorded':'Agreement signed';$('completeInfo').textContent=ack?'Your Sales Manager outline acknowledgment was saved with your full name, date, and official submission time. The track document remains available for review.':'Your agreement has been submitted and recorded. You can download the signed copy here.';$('download').textContent=ack?'Download completed acknowledgment PDF':'Download signed PDF';$('completeTip').textContent=ack?'This is an acknowledgment, not a signed management contract. Download your completed PDF for your records.':'If you need a correction, contact your administrator. Your saved signature cannot be edited from this page.';}
+function showCompleted(data){const ack=managerKind(data.document_key);$('completeTitle').textContent=ack?'Acknowledgment recorded':'Agreement signed';$('completeInfo').textContent=ack?'Your Sales Manager outline acknowledgment was saved with your full name, date, and official submission time. The outline document remains available for review.':'Your agreement has been submitted and recorded. You can download the signed copy here.';$('download').textContent=ack?'Download completed acknowledgment PDF':'Download signed PDF';$('completeTip').textContent=ack?'This is an acknowledgment, not a signed management contract. Download your completed PDF for your records.':'If you need a correction, contact your administrator. Your saved signature cannot be edited from this page.';}
 $('sign').onsubmit=async e=>{
  e.preventDefault();if(!assignment)return;
  const isManager=managerKind(assignment.document_key);
@@ -119,7 +119,7 @@ $('sign').onsubmit=async e=>{
   const path=user.id+'/'+code+'.pdf';
   status('Saving completed PDF privately…');
   const uploaded=await db.storage.from('sh-signed-agreements').upload(path,new Blob([bytes],{type:'application/pdf'}),{contentType:'application/pdf',upsert:false});
-  if(uploaded.error&&!/already exists|duplicate/i.test(uploaded.error.message||''))throw uploaded.error;
+  if(uploaded.error)throw uploaded.error;
   const patch={status:isManager?'acknowledged':'signed',signed_at:stamp,signature_name:name,signature_date:date,
    signature_png:signature,signed_pdf_path:path,terms_accepted:true};
   const {data,error}=await db.from('sh_individual_agreement_actions').update(patch)
