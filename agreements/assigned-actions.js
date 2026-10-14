@@ -31,10 +31,10 @@ if(home){
   welcome.hidden=false;signIn.hidden=true;
   items.textContent='Checking assigned actions…';
   const {data,error}=await supabase.from('sh_individual_agreement_actions')
-   .select('code,document_key,status,created_at,user_id')
+   .select('code,document_key,status,issued_at,user_id')
    .eq('user_id',session.user.id)
-   .order('created_at',{ascending:false});
-  if(error){items.textContent='Unable to load assignments. Please try again or contact your administrator.';return;}
+   .order('issued_at',{ascending:false});
+  if(error){console.error('Assignment lookup:',error);items.textContent='Unable to load assignments ('+(error.code||'access error')+'). Please contact your administrator.';return;}
   items.replaceChildren();
   const rows=(data||[]).filter(a=>titles[a.document_key]&&/^[A-Za-z0-9_-]{7,50}$/.test(a.code));
   if(!rows.length){empty();return;}
@@ -48,6 +48,20 @@ if(home){
  }
  // The original page's code-specific module is unchanged. For the code-free
  // dashboard, make sure its "missing code" branch does not replace this view.
+ // A passcode unlocks only an action already assigned to the signed-in user.
+ $('actionPasscodeForm').addEventListener('submit',async event=>{
+  event.preventDefault();const input=$('actionPasscode'),note=$('passcodeMessage');
+  const passcode=input.value.trim();
+  if(!/^[A-Za-z0-9_-]{7,50}$/.test(passcode)){note.textContent='Enter a valid action code.';return;}
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session?.user){note.textContent='Please sign in before opening an action.';return;}
+  note.textContent='Verifying your passcode…';
+  const {data,error}=await supabase.from('sh_individual_agreement_actions')
+    .select('code').eq('code',passcode).eq('user_id',session.user.id).maybeSingle();
+  if(error){note.textContent='Could not verify the passcode. Contact your administrator.';return;}
+  if(!data){note.textContent='This passcode is not assigned to your account. Contact your administrator.';return;}
+  location.assign('/agreements/'+encodeURIComponent(data.code));
+ });
  const observer=new MutationObserver(()=>{if(!welcome.hidden&&signIn.hidden){$('missing').hidden=true;$('status').classList.remove('error');}});
  observer.observe($('missing'),{attributes:true,attributeFilter:['hidden']});
  await load();
