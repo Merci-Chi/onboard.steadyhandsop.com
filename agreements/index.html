@@ -11,8 +11,8 @@
 .assignment-dashboard .assignment-link .arrow{color:#1269b8;font-weight:800;font-size:24px}
 #homeWelcome .home-notice{padding:18px;border:1px solid #d4e2f0;background:#f5f9ff;border-radius:13px}
 #homeWelcome a{display:inline-block;margin-top:13px}
-</style></head><body>
-<header class="top"><a class="brand" href="/index.html"><img src="/images/logo.png" alt=""><img src="/images/wordmark-white.png" alt="Steady Hands LLC"></a><span>SECURE AGREEMENT ACTION</span></header>
+.top-actions{display:flex;align-items:center;gap:10px}.top-actions .nav-back,.top-actions .nav-signout{display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border:1px solid #6b88ab;border-radius:10px;color:#fff;background:transparent;font:700 14px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}.top-actions .nav-back:hover,.top-actions .nav-signout:hover{background:#24466b}@media(max-width:520px){.top-actions{gap:6px}.top-actions .nav-back,.top-actions .nav-signout{font-size:12px;padding:8px}.brand img:nth-child(2){max-width:33vw}}</style></head><body>
+<header class="top"><a class="brand" href="/index.html"><img src="/images/logo.png" alt=""><img src="/images/wordmark-white.png" alt="Steady Hands LLC"></a><div class="top-actions"><a class="nav-back" href="/agreements/" id="agreement-back">← Back</a><button type="button" class="nav-signout" id="agreement-signout">Sign out</button></div></header>
 <main class="wrap"><div class="heading"><span class="eyebrow">STEADY HANDS LLC · ASSOCIATE AGREEMENT</span><h1 id="title">Your Agreement Actions</h1><p id="intro">Review the actions assigned to your Steady Hands account.</p></div>
 <div class="layout"><section class="panel"><div id="status" role="status" aria-live="polite" class="status">Checking your assignment…</div>
 <div id="homeWelcome" hidden><h2>Agreement Actions</h2><form id="actionPasscodeForm" class="passcode-form"><label for="actionPasscode" style="display:block;font-weight:750;margin-bottom:8px">Enter your agreement passcode</label><div style="display:flex;gap:9px;flex-wrap:wrap"><input id="actionPasscode" type="text" minlength="7" maxlength="50" pattern="[A-Za-z0-9_-]{7,50}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Enter your assigned action code" required style="flex:1;min-width:190px;margin:0"><button class="primary" type="submit">Open action →</button></div><p id="passcodeMessage" class="tip" role="status" aria-live="polite">Your passcode is assigned by an administrator and belongs to your account.</p></form><div class="home-notice"><p>Any agreement or acknowledgment assigned to your account will appear on the right.</p><p>If you believe an agreement is missing, please contact your administrator.</p><a class="outline" href="mailto:kiara@steadyhandsop.com?subject=Agreement%20Action%20Assistance">Contact Administrator</a></div></div>
@@ -28,4 +28,14 @@
 <button id="submit" class="primary" type="submit">Accept & Sign Agreement</button></form>
 <section id="complete" hidden><div class="checkmark">✓</div><h2 id="completeTitle">Agreement signed</h2><p id="completeInfo">Your agreement has been submitted and recorded. You can download the signed copy here.</p><button id="download" class="primary" type="button">Download signed PDF</button><p class="tip" id="completeTip">If you need a correction, contact your administrator. Your saved signature cannot be edited from this page.</p></section>
 </section><aside class="paper"><div class="paperbar"><b id="rightTitle">Assigned actions</b><small>PDF · original terms unchanged</small></div><div id="assignedDashboard" class="assignment-dashboard" hidden><div id="assignmentItems" aria-live="polite"></div></div><iframe id="pdf" title="Assigned agreement PDF" loading="lazy"></iframe><p id="pdfhint">The agreement will appear after you sign in.</p></aside></div></main>
-<footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261013-code-routing"></script><script type="module" src="/agreements/assigned-actions.js?v=20261013-passcode-list-fix"></script></body></html>
+<footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261013-code-routing"></script><script type="module" src="/agreements/assigned-actions.js?v=20261013-passcode-list-fix"></script><script type="module">
+import {supabase} from '/supabase-client.js';
+const back=document.getElementById('agreement-back');
+const code=new URLSearchParams(location.search).get('code')||location.pathname.match(/^\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/)?.[1];
+if(!code)back.href='/index.html';
+document.getElementById('agreement-signout')?.addEventListener('click',async()=>{
+ const button=document.getElementById('agreement-signout');button.disabled=true;button.textContent='Signing out…';
+ try{const {error}=await supabase.auth.signOut();if(error)throw error;location.replace('/login.html')}
+ catch(error){button.disabled=false;button.textContent='Sign out';alert('Unable to sign out: '+(error.message||error))}
+});
+</script></body></html>
