@@ -1,4 +1,4 @@
-import {supabase} from '../supabase-client.js';
+import {supabase,ensureHealthySession} from '/supabase-client.js?v=20261015-reliability';
 
 const home=document.documentElement.classList.contains('assignments-home');
 if(home){
@@ -25,9 +25,9 @@ if(home){
   items.append(box);
  }
  async function load(){
-  const {data:{session},error:sessionError}=await supabase.auth.getSession();
-  if(sessionError){items.textContent='Unable to check assignments. Please refresh.';return;}
-  if(!session?.user){welcome.hidden=true;empty();return;}
+  const health=await ensureHealthySession();const session=health.data?.session,sessionError=health.error;
+  if(sessionError){items.textContent=sessionError.message||'Unable to check assignments. Please refresh.';return;}
+  if(!session?.user){location.replace('/login.html');return;}
   welcome.hidden=false;signIn.hidden=true;
   items.textContent='Checking assigned actions…';
   const {data,error}=await supabase.from('sh_individual_agreement_actions')
@@ -51,4 +51,5 @@ if(home){
  await load();
  supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT')setTimeout(load,0)});
 }
+
 

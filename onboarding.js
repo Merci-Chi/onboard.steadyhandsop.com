@@ -1,4 +1,4 @@
-import {supabase} from './supabase-client.js';
+import {supabase} from '/supabase-client.js?v=20261015-reliability';
 const $=s=>document.querySelector(s);
 const sections=['Welcome to Steady Hands','Personal information','Work preferences','Payment preferences'];
 const roles=[['Sales Associate',true],['Digital Growth Coordinator',true],['Website Developer',false],['Client Support Specialist',false],['Operations Coordinator',false]];
@@ -262,7 +262,13 @@ async function jumpToStep(target){
  }catch(e){step=previous;$('#status').textContent='Could not save your progress. Please try again.'}
  finally{saving=false}
 }
-async function persist(){const {agreementRead,agreementName,agreementSignature,agreementAt,agreementTrack,agreementRole,...profile}=state;const {error}=await supabase.auth.updateUser({data:{steadyhands_onboarding:{...profile,step,updatedAt:new Date().toISOString()}}});if(error){$('#status').textContent='Could not save your progress: '+error.message;return false}return true}
+function profileForSave(){
+ const keys=['name','phone','email','country','region','role','weeklyHours','onboardingVersion','paymentMethod','paymentDetail','paymentConsent','complete','completedAt'];
+ const profile=Object.fromEntries(keys.filter(key=>state[key]!==undefined).map(key=>[key,state[key]]));
+ return {...profile,step,updatedAt:new Date().toISOString()};
+}
+async function persist(){const {error}=await supabase.auth.updateUser({data:{steadyhands_onboarding:profileForSave()}});if(error){$('#status').textContent='Could not save your progress: '+error.message;return false}return true}
+
 function showSuccess(){
  const dialog=$('#onboarding-success');
  if(dialog && !dialog.open) dialog.showModal();
@@ -326,8 +332,9 @@ if(state.complete&&!sections.every((_,i)=>isComplete(i))){
   state.complete=false;
   state.completedAt='';
   step=sections.findIndex((_,i)=>!isComplete(i));
-  const {error:correctionError}=await supabase.auth.updateUser({data:{steadyhands_onboarding:{...state,step,updatedAt:new Date().toISOString()}}});
+  const {error:correctionError}=await supabase.auth.updateUser({data:{steadyhands_onboarding:profileForSave()}});
   if(correctionError)console.warn('Could not synchronize incomplete onboarding:',correctionError.message);
  }
  $('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#private-app').hidden=false;$('#loading').hidden=false;$('#loading').style.display='block';$('#loading').firstChild.textContent='Unable to load your account: '+(e?.message||'Please try again')+' ';const retry=document.getElementById('onboard-retry');if(retry){retry.hidden=false;retry.style.display='block'}console.error(e)}})();
+
 

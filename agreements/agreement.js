@@ -1,4 +1,6 @@
-import {supabase as db} from '../supabase-client.js';
+import {supabase as db,ensureHealthySession} from '/supabase-client.js?v=20261015-reliability';
+import {saveAgreement,validateSigner} from './agreement-save.js';
+const saveAttempt={};
 const $=id=>document.getElementById(id);let user=null,assignment=null,signedDoc=null,drawn=false,drawing=false;
 const KINDS={'trial-hourly':['Agreement - Sales Associate Trial: Hourly Pay (10 hrs / Week)','Sales-Associate-Trial-10-Hour-Hourly.pdf'],'trial-commission':['Agreement - Sales Associate Trial: Commission Pay (10 hrs / Week)','Sales-Associate-Trial-Commission.pdf'],'hourly-10':['Agreement - Sales Associate: Hourly Pay (10 hrs / Week)','Sales-Associate-Agreement-10-Hours.pdf'],'hourly-20':['Agreement - Sales Associate: Hourly Pay (20 hrs / Week)','Sales-Associate-Agreement-20-Hours.pdf'],'commission':['Agreement - Sales Associate: Commission Pay (10 hrs / Week)','Sales-Associate-Agreement-Commission.pdf'],'manager-10':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (10 hrs / Week)','Sales-Manager-Outline-10-Hours.pdf'],'manager-20':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (20 hrs / Week)','Sales-Manager-Outline-20-Hours.pdf']};
 const code=(new URLSearchParams(location.search).get('code')||location.pathname.match(/\/agreements\/([A-Za-z0-9_-]{7,50})\/?$/)?.[1]||'').trim();
@@ -11,13 +13,14 @@ $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOS
 const canvas=$('pad'),ctx=canvas.getContext('2d');
 function sizePad(){let r=canvas.getBoundingClientRect();if(!r.width)return;const d=devicePixelRatio||1;const keep=drawn?canvas.toDataURL():null;canvas.width=Math.round(r.width*d);canvas.height=Math.round(160*d);ctx.setTransform(d,0,0,d,0,0);ctx.strokeStyle='#102945';ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';if(keep){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,r.width,160);im.src=keep;}}
 const pos=e=>{const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};
-canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();if(!canvas.width)sizePad();drawing=true;canvas.setPointerCapture(e.pointerId);let [x,y]=pos(e);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+.1,y+.1);ctx.stroke();drawn=true;});
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();if(!canvas.width)sizePad();drawing=true;try{canvas.setPointerCapture(e.pointerId)}catch(_){}let [x,y]=pos(e);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+.1,y+.1);ctx.stroke();drawn=true;});
 canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();ctx.lineTo(...pos(e));ctx.stroke()});for(let ev of ['pointerup','pointercancel'])canvas.addEventListener(ev,()=>drawing=false);
 $('clear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);drawn=false};
 window.addEventListener('resize',()=>{if(!drawing&&!$('sign').hidden)sizePad()});
-async function display(){status('Checking your account and agreement assignment…');const {data:{session}}=await db.auth.getSession();user=session?.user||null;if(!user){show('signin');status('Please sign in to review your agreement.');return;}
+canvas.style.touchAction='none';
+async function display(){status('Checking your account and agreement assignment…');const health=await ensureHealthySession();if(health.error){show('signin');status(health.error.message,true);return;}const session=health.data?.session;user=session?.user||null;if(!user){show('signin');status('Please sign in to review your agreement.');return;}
 if(!/^[A-Za-z0-9_-]{7,50}$/.test(code)){show('missing');status('Missing or invalid agreement link.',true);return;}
-const {data,error}=await db.from('sh_individual_agreement_actions').select('code,document_key,assigned_email,user_id,status,signed_pdf_path,signed_at,associate_name,effective_date,work_location,signature_name,signature_date').eq('code',code).maybeSingle();
+const {data,error}=await db.from('sh_individual_agreement_actions').select('code,document_key,assigned_email,user_id,status,signed_pdf_path,signed_at,associate_name,effective_date,work_location,signature_name,signature_date').eq('code',code).eq('user_id',user.id).maybeSingle();
 if(error){show('missing');status('Could not check agreement: '+error.message,true);return;}
 if(!data||!KINDS[data.document_key]){show('missing');status('No agreement is assigned to this account for this link.',true);return;}
 assignment=data;$('title').textContent=KINDS[data.document_key][0];$('kind').textContent=KINDS[data.document_key][0];$('recipient').textContent=user.email||'';$('intro').textContent='Review, acknowledge, and electronically sign your individually assigned agreement.';
@@ -35,8 +38,8 @@ async function buildSignedPDF(raw,info){
  const ink=PDFLib.rgb(.07,.16,.29),white=PDFLib.rgb(1,1,1),accent=PDFLib.rgb(.08,.35,.57);
  const isManager=managerKind(assignment.document_key),trial=assignment.document_key.startsWith('trial-');
  const A=assignment;const associate=A.associate_name||info.name;
- const shortDate=value=>{const match=String(value||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return match?match[2]+'/'+match[3]+'/'+match[1].slice(2):String(value||'');};
- const fit=(value,maxWidth,size=9)=>{let t=String(value||'').replace(/[^\\x20-\\x7e]/g,' ').trim();while(t.length&&font.widthOfTextAtSize(t,size)>maxWidth)t=t.slice(0,-1);return t;};
+ const shortDate=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?match[2]+'/'+match[3]+'/'+match[1].slice(2):String(value||'');};
+ const fit=(value,maxWidth,size=9)=>{let t=String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,'?').trim();while(t.length&&font.widthOfTextAtSize(t,size)>maxWidth)t=t.slice(0,-1);return t;};
  // Precisely cover only the empty underline, never the adjoining field labels.
  // top is measured from the top of the A4 page in PDF points.
  function field(page,x,top,w,value,size=9){
@@ -101,7 +104,21 @@ async function buildSignedPDF(raw,info){
  page.drawText('The original agreement pages precede this audit record.',{x:47,y:80,size:9,font,color:ink});
  return await doc.save();
 }
-async function pdfLib(){if(window.PDFLib)return;await new Promise((ok,fail)=>{const el=document.createElement('script');el.src='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';el.onload=ok;el.onerror=()=>fail(Error('Unable to load PDF signing library'));document.head.appendChild(el)});}
+let pdfLibraryPromise;
+async function pdfLib(){
+ if(window.PDFLib)return;
+ if(!pdfLibraryPromise)pdfLibraryPromise=(async()=>{
+  for(const url of ['https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js']){
+   try{await new Promise((resolve,reject)=>{
+    const el=document.createElement('script');el.src=url;
+    const timer=setTimeout(()=>{el.remove();reject(Error('PDF library timed out'));},8000);
+    el.onload=()=>{clearTimeout(timer);resolve()};el.onerror=()=>{clearTimeout(timer);el.remove();reject(Error('PDF library could not load'))};document.head.appendChild(el);
+   });if(window.PDFLib)return;}catch(_){}
+  }
+  throw Error('Unable to load the PDF generator. Check your connection or content blocker and retry.');
+ })().catch(error=>{pdfLibraryPromise=null;throw error});
+ return pdfLibraryPromise;
+}
 function showCompleted(data){const ack=managerKind(data.document_key);$('completeTitle').textContent=ack?'Acknowledgment recorded':'Agreement signed';$('completeInfo').textContent=ack?'Your Sales Manager outline acknowledgment was saved with your full name, date, and official submission time. The outline document remains available for review.':'Your agreement has been submitted and recorded. You can download the signed copy here.';$('download').textContent=ack?'Download completed acknowledgment PDF':'Download signed PDF';$('completeTip').textContent=ack?'This is an acknowledgment, not a signed management contract. Download your completed PDF for your records.':'If you need a correction, contact your administrator. Your saved signature cannot be edited from this page.';}
 $('sign').onsubmit=async e=>{
  e.preventDefault();if(!assignment)return;
@@ -109,28 +126,33 @@ $('sign').onsubmit=async e=>{
  if(!isManager&&!drawn){status('Please draw your signature.',true);return;}
  if(!$('read').checked||!$('agree').checked){status('Read and accept the terms first.',true);return;}
  const name=$('fullName').value.trim(),date=$('date').value;
- if(name.length<3||!date){status('Enter your full legal name and signing date.',true);return;}
+ if(name.length<3||!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date))){status('Enter your full legal name and a valid signing date.',true);return;}
+ try{validateSigner(assignment,user,name)}catch(error){status(error.message,true);return;}
  const button=$('submit');button.disabled=true;
  try{
-  status('Preparing your completed PDF…');await pdfLib();
-  const response=await fetch(pdfURL(assignment.document_key));
-  if(!response.ok)throw Error('The original agreement PDF could not be loaded.');
+  const health=await ensureHealthySession();if(health.error)throw health.error;
+  if(health.data?.session?.user?.id!==user.id)throw Error('Your account changed. Reload this page before signing.');
+  status('Preparing and saving your agreement. Keep this page open…');
+  await pdfLib();
   const signature=isManager?null:canvas.toDataURL('image/png');
-  const stamp=new Date().toISOString();
-  const bytes=await buildSignedPDF(await response.arrayBuffer(),{name,date,signature,stamp});
-  const path=user.id+'/'+code+'.pdf';
-  status('Saving completed PDF privately…');
-  const uploaded=await db.storage.from('sh-signed-agreements').upload(path,new Blob([bytes],{type:'application/pdf'}),{contentType:'application/pdf',upsert:false});
-  if(uploaded.error)throw uploaded.error;
-  const patch={status:isManager?'acknowledged':'signed',signed_at:stamp,signature_name:name,signature_date:date,
-   signature_png:signature,signed_pdf_path:path,terms_accepted:true};
-  const {data,error}=await db.from('sh_individual_agreement_actions').update(patch)
-   .eq('code',code).eq('user_id',user.id).eq('status','pending').select('signed_at').single();
-  if(error)throw error;
-  Object.assign(assignment,patch,{signed_at:data.signed_at});
-  show('complete');showCompleted(assignment);
-  status((isManager?'Acknowledgment':'Agreement')+' saved on '+new Date(data.signed_at).toLocaleString()+'.');
- }catch(error){status('Not completed: '+error.message+'. Please retry.',true)}finally{button.disabled=false;}
+  const result=await saveAgreement({db,assignment,user,name,date,signature,attempt:saveAttempt,makePDF:async stamp=>{
+   const response=await fetch(pdfURL(assignment.document_key));
+   if(!response.ok)throw Error('The original agreement PDF could not be loaded (HTTP '+response.status+').');
+   return buildSignedPDF(await response.arrayBuffer(),{name,date,signature,stamp});
+  }});
+  Object.assign(assignment,result);show('complete');showCompleted(assignment);
+  status((isManager?'Acknowledgment':'Agreement')+' saved on '+new Date(assignment.signed_at).toLocaleString()+'.');
+ }catch(error){status('Not completed: '+error.message,true)}finally{button.disabled=false;}
 };
-$('download').onclick=async()=>{if(!assignment?.signed_pdf_path){status('Signed document not available.',true);return;}const {data,error}=await db.storage.from('sh-signed-agreements').download(assignment.signed_pdf_path);if(error){status(error.message,true);return;}const link=document.createElement('a'),url=URL.createObjectURL(data);link.href=url;link.download='SteadyHands-Signed-'+code+'.pdf';link.click();setTimeout(()=>URL.revokeObjectURL(url),15000)};
-display().catch(e=>{status('Unable to open action: '+e.message,true);show('missing')});
+$('download').onclick=async()=>{
+ const button=$('download');button.disabled=true;
+ try{
+  const health=await ensureHealthySession();if(health.error)throw health.error;
+  if(!assignment?.signed_pdf_path)throw Error('Signed document not available.');
+  const {data,error}=await db.storage.from('sh-signed-agreements').download(assignment.signed_pdf_path);if(error)throw error;
+  const link=document.createElement('a'),url=URL.createObjectURL(data);link.href=url;link.download='SteadyHands-Signed-'+code+'.pdf';
+  document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }catch(error){status('Could not download PDF: '+error.message,true)}finally{button.disabled=false;}
+};
+if(code)display().catch(e=>{status('Unable to open action: '+e.message,true);show('missing')});
+

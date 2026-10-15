@@ -1,4 +1,4 @@
-import {supabase} from './supabase-client.js';
+import {supabase} from '/supabase-client.js?v=20261015-reliability';
 const $=selector=>document.querySelector(selector);
 const lessons=[
  {title:'Introduction + Training Disclaimer',description:'Welcome to Steady Hands and important information about the fictional examples shown.',video:'App-Tutorial Videos/00-Introduction-and-Training-Disclaimer.mp4',icon:'▶'},
@@ -67,3 +67,4 @@ $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('l
   render();$('#training-loading').hidden=true;$('#training-app').hidden=false;
  }catch(e){console.error(e);$('#training-loading').textContent='Unable to load your account. Please refresh and try again.'}
 })();
+
