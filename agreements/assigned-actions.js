@@ -42,28 +42,13 @@ if(home){
    const link=make('a','assignment-link');link.href='/agreements/'+encodeURIComponent(a.code);
    const body=make('span');body.append(make('b','',titles[a.document_key]));
    const action=a.document_key.startsWith('manager-')?'Acknowledgment':'Agreement';
-   body.append(make('small','',action+' · '+(completed(a.status)?a.status==='signed'?'Signed':'Acknowledged':'Action needed')+' · Code '+a.code));
+   body.append(make('small','',action+' · '+(completed(a.status)?a.status==='signed'?'Signed':'Acknowledged':'Action needed')));
    link.append(body,make('span','arrow','→'));items.append(link);
   }
  }
- // The original page's code-specific module is unchanged. For the code-free
- // dashboard, make sure its "missing code" branch does not replace this view.
- // A passcode unlocks only an action already assigned to the signed-in user.
- $('actionPasscodeForm').addEventListener('submit',async event=>{
-  event.preventDefault();const input=$('actionPasscode'),note=$('passcodeMessage');
-  const passcode=input.value.trim();
-  if(!/^[A-Za-z0-9_-]{7,50}$/.test(passcode)){note.textContent='Enter a valid action code.';return;}
-  const {data:{session}}=await supabase.auth.getSession();
-  if(!session?.user){note.textContent='Please sign in before opening an action.';return;}
-  note.textContent='Verifying your passcode…';
-  const {data,error}=await supabase.from('sh_individual_agreement_actions')
-    .select('code').eq('code',passcode).eq('user_id',session.user.id).maybeSingle();
-  if(error){note.textContent='Could not verify the passcode. Contact your administrator.';return;}
-  if(!data){note.textContent='This passcode is not assigned to your account. Contact your administrator.';return;}
-  location.assign('/agreements/'+encodeURIComponent(data.code));
- });
  const observer=new MutationObserver(()=>{if(!welcome.hidden&&signIn.hidden){$('missing').hidden=true;$('status').classList.remove('error');}});
  observer.observe($('missing'),{attributes:true,attributeFilter:['hidden']});
  await load();
  supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT')setTimeout(load,0)});
 }
+

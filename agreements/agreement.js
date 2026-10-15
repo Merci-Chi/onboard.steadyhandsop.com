@@ -90,7 +90,7 @@ async function buildSignedPDF(raw,info){
  line('Full legal name entered by associate',info.name,521);
  line('Date entered by associate',info.date,473);
  line('Account email',user.email||'',425);
- line('Action passcode',code,377);
+ line('Assignment reference',code,377);
  line('Submitted at (UTC)',info.stamp,329);
  if(!isManager){
   page.drawText('Drawn signature',{x:47,y:273,size:10,font:bold,color:ink});

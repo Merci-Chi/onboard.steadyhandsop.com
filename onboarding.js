@@ -1,11 +1,11 @@
 import {supabase} from './supabase-client.js';
 const $=s=>document.querySelector(s);
-const sections=['Welcome to Steady Hands','Personal information','Work preferences','Agreement','Payment preferences'];
-const roles=[['Sales Associate',true],['Marketing Director',true],['Website Developer',false],['Client Support Specialist',false],['Operations Coordinator',false]];
+const sections=['Welcome to Steady Hands','Personal information','Work preferences','Payment preferences'];
+const roles=[['Sales Associate',true],['Digital Growth Coordinator',true],['Website Developer',false],['Client Support Specialist',false],['Operations Coordinator',false]];
 let user,step=0,saving=false;
 let previousStepWarning='';
 let reviewingFromFinal=false;
-let state={name:'',dob:'',phone:'',email:'',address:'',city:'',country:'',region:'',zip:'',role:'',weeklyHours:null,onboardingVersion:5,agreementRead:false,agreementName:'',agreementSignature:'',agreementAt:'',trainingDone:false,paymentMethod:'',paymentDetail:'',paymentConsent:false,agreementTrack:'trial',agreementRole:'',complete:false,step:0};
+let state={name:'',dob:'',phone:'',email:'',address:'',city:'',country:'',region:'',zip:'',role:'',weeklyHours:null,onboardingVersion:6,trainingDone:false,paymentMethod:'',paymentDetail:'',paymentConsent:false,complete:false,step:0};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const field=(label,id,type='text',value='',attrs='')=>`<label for="${id}"><span class="field-label-text">${esc(label.replace(/\s*\*$/, ''))}${attrs.includes('required')?' <span class="required-star" aria-label="required">*</span>':''}</span><input id="${id}" type="${type}" value="${esc(value)}" ${attrs}></label>`;
 const paymentDetailLabel=method=>({zelle:'Zelle email or phone',applepay:'Apple Pay phone number',cashapp:'Cash App $Cashtag',paypal:'PayPal email',other:'Preferred payment method'})[method]||'Payment details';
@@ -85,8 +85,8 @@ function render(){
  const p=Math.round(sections.map((_,i)=>i).filter(isComplete).length/sections.length*100);$('#percent').textContent=p+'%';$('#progress-fill').style.width=p+'%';
  $('#step-nav').innerHTML=sections.map((name,i)=>`<button class="step-item ${i===step?'active':''} ${isComplete(i)?'done':''}" data-step="${i}" type="button" title="${esc(name)}" ${state.complete?'aria-label="View '+esc(name)+' (read-only)"':''}><span class="step-circle">${isComplete(i)?'✓':i+1}</span><span class="step-text"><span class="step-index">${i+1}.</span> ${esc(name)}</span></button>`).join('');
  $('#step-counter').textContent=`STEP ${step+1} OF ${sections.length}`;$('#back').hidden=step===0;
- let returnButton=$('#return-review');if(returnButton){returnButton.hidden=!(state.complete&&step!==4);returnButton.textContent='← Back to completed overview';}$('#next').hidden=state.complete;$('#next').textContent=step===4?'Complete onboarding':'Save and continue →';$('#status').textContent='';$('#status').removeAttribute('role');document.querySelectorAll('.step-item').forEach(btn=>btn.addEventListener('click',()=>jumpToStep(Number(btn.dataset.step))));
- if(step===0)mark(`<p class="eyebrow">WELCOME TO THE TEAM</p><h1>Let's get you started.</h1><p class="lead">Welcome to Steady Hands LLC. This short onboarding walks you through your information, company orientation, and the next steps for your role.</p><div class="hero-graphic"><img src="images/background2.jpg" alt=""><div><span>STEADY HANDS LLC</span><h2>Great work starts with a steady hand.</h2></div></div><section class="welcome-narration" aria-label="Welcome audio narration"><div class="welcome-audio-heading"><span class="welcome-audio-icon" aria-hidden="true"><img src="images/audio-speaker.svg" alt=""></span><div><strong>Welcome message</strong><small>Listen to your introduction before beginning onboarding.</small></div></div><audio controls preload="metadata" src="audios/Intro.mp3" aria-label="Steady Hands LLC welcome narration">Your browser does not support audio playback. <a href="audios/Intro.mp3">Listen to the welcome message</a>.</audio></section><div class="info-strip"><strong>About 10 minutes</strong><span>Five easy steps · Progress saved</span></div>`);
+ let returnButton=$('#return-review');if(returnButton){returnButton.hidden=!(state.complete&&step!==3);returnButton.textContent='← Back to completed overview';}$('#next').hidden=state.complete;$('#next').textContent=step===3?'Complete onboarding':'Save and continue →';$('#status').textContent='';$('#status').removeAttribute('role');document.querySelectorAll('.step-item').forEach(btn=>btn.addEventListener('click',()=>jumpToStep(Number(btn.dataset.step))));
+ if(step===0)mark(`<p class="eyebrow">WELCOME TO THE TEAM</p><h1>Let's get you started.</h1><p class="lead">Welcome to Steady Hands LLC. This short onboarding walks you through your information, company orientation, and the next steps for your role.</p><div class="hero-graphic"><img src="images/background2.jpg" alt=""><div><span>STEADY HANDS LLC</span><h2>Great work starts with a steady hand.</h2></div></div><section class="welcome-narration" aria-label="Welcome audio narration"><div class="welcome-audio-heading"><span class="welcome-audio-icon" aria-hidden="true"><img src="images/audio-speaker.svg" alt=""></span><div><strong>Welcome message</strong><small>Listen to your introduction before beginning onboarding.</small></div></div><audio controls preload="metadata" src="audios/Intro.mp3" aria-label="Steady Hands LLC welcome narration">Your browser does not support audio playback. <a href="audios/Intro.mp3">Listen to the welcome message</a>.</audio></section><div class="info-strip"><strong>About 10 minutes</strong><span>Four easy steps · Progress saved</span></div>`);
  if(step===1){
   mark(`<p class="eyebrow">ABOUT YOU</p><h1>Your Information</h1><p class="lead">Please confirm your information before continuing. Required fields are marked *.</p><div class="field-grid">${field('Full legal name *','full-name','text',state.name,'autocomplete="name" maxlength="120" required')}${field('Email address *','email','email',state.email||user?.email||'','autocomplete="email" placeholder="name@example.com" required')}${field('Phone number *','phone','tel',state.phone,'autocomplete="tel" maxlength="45" required')}${field('Country of residence *','country','text',state.country,'autocomplete="country-name" maxlength="100" placeholder="e.g. United States or Canada" required')}${field('State / Province of residence *','region','text',state.region,'autocomplete="address-level1" maxlength="100" placeholder="e.g. Nevada or Ontario" required')}</div><div class="role-group"><h3>Position you're joining <span class="required-star">*</span></h3><p class="hint">Only positions accepting new team members can be selected.</p><div class="role-options">${roles.map(([title,open])=>`<label class="role-choice ${open?'':'is-full'}"><input type="radio" name="team-role" value="${esc(title)}" ${state.role===title?'checked':''} ${open?'':'disabled'}><span>${esc(title)}${title==='Sales Associate'?'<small class="trial-tag">2-Week Paid Trial</small>':''}</span><small class="${open?'':'full-badge'}">${open?'Available':'Unavailable'}</small></label>`).join('')}</div></div><p class="hint">Additional information required for payroll will be collected separately through a secure process.</p>`);
   document.querySelectorAll('input[name="team-role"]').forEach(input=>input.addEventListener('change',()=>{state.role=input.value;document.querySelectorAll('.role-choice').forEach(el=>el.classList.toggle('selected',Boolean(el.querySelector('input:checked'))));}));
@@ -94,41 +94,11 @@ function render(){
 
  if(step===2){
   const hours=Number(state.weeklyHours);
-  mark(`<p class="eyebrow">WORK PREFERENCES</p><h1>Your preferred schedule</h1><p class="lead">Select the weekly hours you'd prefer to work. Your choice will appear in your employment agreement and is subject to company approval.</p><div class="schedule-options"><label class="schedule-choice"><input type="radio" name="weekly-hours" value="10" ${hours===10?'checked':''}><span><strong>10 hours per week</strong><small>About 2 hours per workday over 5 days</small></span></label><label class="schedule-choice"><input type="radio" name="weekly-hours" value="20" ${hours===20?'checked':''}><span><strong>20 hours per week</strong><small>About 4 hours per workday over 5 days</small></span></label></div><p class="hint">This is a preferred schedule, not a promise of fixed hours. Your finalized offer will confirm scheduling and applicable pay terms.</p>`);
-  document.querySelectorAll('input[name="weekly-hours"]').forEach(input=>input.addEventListener('change',()=>{state.weeklyHours=Number(input.value);state.agreementRead=false;state.agreementName='';state.agreementSignature='';state.agreementAt='';state.agreementRole='';render()}));
+  mark(`<p class="eyebrow">WORK PREFERENCES</p><h1>Your preferred schedule</h1><p class="lead">Select the weekly hours you'd prefer to work. These are your preferred hours, not guaranteed hours. Your hourly rate will be determined by your signed agreement.</p><div class="schedule-options"><label class="schedule-choice"><input type="radio" name="weekly-hours" value="10" ${hours===10?'checked':''}><span><strong>10 hours per week</strong><small>About 2 hours per workday over 5 days</small></span></label><label class="schedule-choice"><input type="radio" name="weekly-hours" value="20" ${hours===20?'checked':''}><span><strong>20 hours per week</strong><small>About 4 hours per workday over 5 days</small></span></label></div><p class="hint">Your signed agreement will confirm your hourly rate and applicable work terms.</p>`);
+  document.querySelectorAll('input[name="weekly-hours"]').forEach(input=>input.addEventListener('change',()=>{state.weeklyHours=Number(input.value);render()}));
  }
- if(step===3){
-   const sales=state.role==='Sales Associate';
-   const track=sales?(state.agreementTrack==='regular'?'regular':'trial'):'marketing';
-   const hours=Number(state.weeklyHours)===10?10:20;
-   const scheduleText=`${hours} hours per week (about ${hours/5} hours each workday, based on 5 workdays)`;
-   const weeklyBase=hours*12;
-   const salesBonus=`<h4>Monthly Sales Performance Bonuses</h4><p>In addition to hourly wages and commissions, associates may earn a <strong>$100 monthly bonus for 5–9 qualifying paid sales</strong> or a <strong>$250 monthly bonus for 10 or more qualifying paid sales</strong> within a calendar month. These tiers are alternatives, not cumulative.</p><p>Bonuses are calculated separately from wages and commissions. A sale qualifies for commission only when the customer's payment successfully processes. Eligibility, payment dates, refunds, cancellations, and adjustments must be specified in the written compensation plan. All hours worked are paid regardless of sales outcomes.</p>`;
-   const docs={
-    trial:{title:'Sales Associate — 2-Week Paid Trial',body:`<p><strong>Agreement effective date:</strong> October 13, 2026. <strong>Role:</strong> Outbound Sales Representative (Sales Associate). <strong>Trial length:</strong> 2 weeks.</p><p><strong>Trial schedule:</strong> 10 hours per week, generally Monday–Friday for 2 hours daily; 20 total scheduled hours during the trial. Any different schedule requires advance approval. All actual work time must be recorded and paid.</p><h4>Hourly Wages</h4><p><strong>$12 per hour or the higher applicable minimum wage.</strong> At 10 hours per week, illustrative base wages are $120 weekly and $240 over the two-week trial, before taxes and excluding commissions or bonuses.</p><h4>Sales Commission</h4><p><strong>$30 for each qualifying paid sale</strong>, earned when the client's payment successfully processes and the transaction meets the written commission plan. Commissions are separate from hourly wages and monthly bonuses. Unpaid or unsuccessful transactions do not qualify; commission payment dates, refunds and adjustments must be provided in writing.</p>${salesBonus}<h4>Calling and Sales Requirements</h4><p>Target a minimum of <strong>25 legitimate outbound call attempts per scheduled working hour</strong>, accurately documented in Outreach and performed in compliance with calling rules. The trial sales goal is <strong>2 qualifying paid sales per week</strong> (4 over two weeks). Maintain accurate records, complete follow-ups and communicate respectfully and honestly with customers.</p><h4>Evaluation and Continued Employment</h4><p>At the end of the two-week trial, Steady Hands LLC will evaluate sales, legitimate calling activity, CRM accuracy, punctuality, professionalism and customer care. Falling below a target may prompt coaching or a decision not to continue employment, but does not remove earned wage or commission rights. Completion of the trial does not guarantee continued employment.</p><p><strong>Employment details:</strong> The individual start and end dates, pay schedule, work jurisdiction and other applicable employment terms will be confirmed in a separate written offer. This acknowledgment does not waive any rights under applicable law.</p>`},
-    regular:{title:'Sales Associate — Regular Employment',body:`<p><strong>Role:</strong> Sales Associate. <strong>Schedule:</strong> ${scheduleText}, with flexible scheduling. Employees may select their preferred working hours, subject to company approval.</p><p><strong>Compensation:</strong> $12/hour or the higher applicable minimum wage, plus $30 commission per qualifying sale. Based on ${hours} hours worked at $12/hour, illustrative base pay is $${weeklyBase} per week before taxes, excluding commissions.</p>${salesBonus}<p><strong>Duties:</strong> Contact prospective clients, accurately explain services and pricing, maintain CRM records, complete follow-ups, and protect confidential information.</p><p><strong>Sales Performance:</strong> Sales Associates are expected to work toward a target of <strong>2 qualifying paid sales per week</strong>. Performance will be evaluated based on sales, outreach activity, follow-ups, CRM accuracy, attendance, and professionalism. Falling below the target will be reviewed individually and will not automatically result in termination.</p><p><strong>Continued Employment:</strong> Performance, reliability, and adherence to company policies will be considered when reviewing continued employment. All hours worked will be compensated regardless of sales performance.</p><p><strong>Employment terms:</strong> Start date, work location, pay dates, and commission payment terms will be confirmed separately by Steady Hands LLC.</p>`},
-    marketing:{title:'Marketing Director — Employment',body:`<p><strong>Role:</strong> Marketing Director.</p><p><strong>Compensation and hours:</strong> To be established in an individualized employer-issued offer. No salary, hours, bonus, or employment classification is assumed by this page.</p><p><strong>Duties:</strong> plan marketing strategy, manage campaigns, maintain brand standards, track results, and report to company leadership.</p><p><strong>Scope of authority:</strong> Advertising spending limits, approvals, account access, and any managerial authority must be approved separately.</p>`}
-   };
-   const doc=docs[track];
-   const roleKey=`${state.role}:${track}:${hours}`;
-   const sameTerms=state.agreementRole===roleKey;
-   mark(`<p class="eyebrow">YOUR EMPLOYMENT</p><h1>Employment agreement</h1><p class="lead">Review the terms for your selected role. This is a role-specific draft acknowledgment, not the final legally reviewed employment offer.</p><div class="agreement-download-row" style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:18px 0 24px;padding:18px;border:1px solid #bbd3ee;background:#edf5ff;border-radius:14px"><button type="button" id="download-signed-agreement" class="primary-button" style="display:inline-flex;align-items:center;justify-content:center;min-height:46px;font-weight:700">↓ Download signed agreement (PDF)</button><span id="agreement-download-status" role="status" aria-live="polite" style="font-size:14px">Sign in the box below, then download your copy here.</span></div><div class="document-panel"><h3>${esc(doc.title)}</h3>${doc.body}<p><strong>Agreement effective date:</strong> October 13, 2026. The signing date and time are recorded when the Associate completes their electronic acknowledgment.</p><p><strong>General acknowledgment:</strong> I understand the expectations above, will follow lawful company policies, maintain confidentiality and use only approved tools. This acknowledgment does not waive statutory rights.</p></div><label class="agree"><input id="agreement-read" type="checkbox" ${sameTerms&&state.agreementRead?'checked':''}><span>I have read the ${esc(doc.title)} acknowledgment. <span class="required-star">*</span></span></label><div class="signature-field"><label for="agreement-signature">Draw your signature <span class="required-star">*</span></label><div class="signature-pad"><canvas id="agreement-signature" width="560" height="155" aria-label="Draw your signature here"></canvas></div><div class="signature-controls"><span>Use your mouse, trackpad or finger to sign.</span><button type="button" id="clear-agreement-signature" class="secondary-button">Clear signature</button></div></div><p class="hint">A finalized written offer with actual pay, dates and relevant state-law terms should be issued separately before employment begins.</p>`);
-   const agreementUnlocked=[0,1,2].every(isComplete);
-   if(!agreementUnlocked){
-    const note=$('#agreement-download-status');
-    note.textContent='Complete Welcome, Personal information, and Work preferences before signing or downloading.';
-    $('#agreement-read').disabled=true;
-    $('#agreement-signature').style.pointerEvents='none';
-    $('#agreement-signature').setAttribute('aria-disabled','true');
-    $('#clear-agreement-signature').disabled=true;
-    $('#download-signed-agreement').disabled=true;
-   }
-   initializeSignaturePad(sameTerms);
-   $('#download-signed-agreement').addEventListener('click',downloadSignedAgreement);
-   document.querySelectorAll('input[name="agreement-track"]').forEach(input=>input.addEventListener('change',()=>{state.agreementTrack=input.value;state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';render()}));
- }
- if(step===4 && state.complete){mark(`<div class="finish-icon">✓</div><p class="eyebrow center">ONBOARDING COMPLETE</p><h1 class="center">Welcome to Steady Hands!</h1><p class="lead center">Your information has been saved successfully.</p><p class="center"><a class="primary-button" href="training.html">Continue to Training →</a></p>`)}
- if(step===4 && !state.complete){
+ if(step===3 && state.complete){mark(`<div class="finish-icon">✓</div><p class="eyebrow center">ONBOARDING COMPLETE</p><h1 class="center">Welcome to Steady Hands!</h1><p class="lead center">Your information has been saved successfully.</p><p class="center"><a class="primary-button" href="training.html">Continue to Training →</a></p>`)}
+ if(step===3 && !state.complete){
   const methods=[['direct-deposit','Direct deposit'],['check','Paper check'],['zelle','Zelle'],['cashapp','Cash App'],['paypal','PayPal'],['applepay','Apple Pay'],['other','Other']];
   mark(`<p class="eyebrow">PAYROLL PREFERENCES</p><h1>Preferred payment method</h1><p class="lead">Choose how you would prefer to receive your pay. Your selection is a request only; Steady Hands LLC will confirm the payroll methods legally available in your work location.</p><div class="payment-options">${methods.map(([id,title])=>`<label class="payment-choice"><input type="radio" name="payment-method" value="${id}" ${state.paymentMethod===id?'checked':''}><span>${title}</span></label>`).join('')}</div><div id="payment-details" class="payment-details" ${['zelle','applepay','cashapp','paypal','other'].includes(state.paymentMethod)?'':'hidden'}><label class="payment-detail-label" for="payment-detail">${paymentDetailLabel(state.paymentMethod)} <span class="required-star">*</span></label><input id="payment-detail" type="${state.paymentMethod==='applepay'?'tel':'text'}" inputmode="${state.paymentMethod==='applepay'?'tel':'text'}" maxlength="130" autocomplete="off" placeholder="${paymentPlaceholder(state.paymentMethod)}" value="${esc(state.paymentDetail)}"></div><p class="hint">Do not enter bank account numbers, routing numbers, passwords, or other sensitive financial information here. Direct deposit enrollment will be handled through a secure payroll system.</p><label class="agree"><input id="payment-consent" type="checkbox" ${state.paymentConsent?'checked':''}><span>I understand my preference is subject to availability, company approval, and applicable wage-payment requirements. <span class="required-star">*</span></span></label>`);
   document.querySelectorAll('input[name="payment-method"]').forEach(el=>el.addEventListener('change',()=>{collectDraft();state.paymentMethod=el.value;state.paymentDetail='';render()}));
@@ -137,19 +107,12 @@ function render(){
  attachPhoneFormat();
  if(state.complete){
   const area=$('#step-content');
-  area.querySelectorAll('input, textarea, select, button:not(#download-signed-agreement)').forEach(el=>{el.disabled=true;});
-  const canvas=area.querySelector('#agreement-signature');
-  if(canvas){canvas.style.pointerEvents='none';canvas.setAttribute('aria-disabled','true');}
+  area.querySelectorAll('input, textarea, select, button').forEach(el=>{el.disabled=true;});
   const message=document.createElement('p');
   message.className='readonly-banner';
   message.textContent='View only · Your onboarding is complete. Saved answers cannot be changed.';
   area.prepend(message);
-  if(step===3){
-   const download=area.querySelector('#download-signed-agreement');
-   if(download)download.disabled=!isComplete(3);
-   const note=area.querySelector('#agreement-download-status');
-   if(note)note.textContent=isComplete(3)?'You can download your signed agreement.':'No completed signed agreement is available for download.';
-  }
+
  }
  $('#step-content').addEventListener('input',()=>{if($('#status').getAttribute('role')==='alert'){collectDraft();showIssues(step)}},{passive:true});
  $('#step-content').addEventListener('change',()=>{if($('#status').getAttribute('role')==='alert'){collectDraft();showIssues(step)}},{passive:true});
@@ -163,16 +126,14 @@ function isComplete(i){
  if(i===0)return true;
  if(i===1)return ['name','phone','email','country','region'].every(k=>filled(state[k])) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email) && validPhone(state.phone) && roles.some(([r,open])=>open&&r===state.role);
  if(i===2)return [10,20].includes(Number(state.weeklyHours));
- if(i===3)return Boolean([0,1,2].every(isComplete) && state.agreementRole===`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && state.agreementRead && filled(state.agreementSignature));
- if(i===4)return Boolean(state.paymentMethod && state.paymentConsent && (!['zelle','applepay','cashapp','paypal','other'].includes(state.paymentMethod) || (filled(state.paymentDetail) && (state.paymentMethod!=='applepay' || validPhone(state.paymentDetail)))));
+ if(i===3)return Boolean(state.paymentMethod && state.paymentConsent && (!['zelle','applepay','cashapp','paypal','other'].includes(state.paymentMethod) || (filled(state.paymentDetail) && (state.paymentMethod!=='applepay' || validPhone(state.paymentDetail)))));
 
  return false;
 }
 const missingFields={
   1:[['name','full-name','Full legal name'],['email','email','Email address'],['phone','phone','Phone number'],['country','country','Country of residence'],['region','region','State / Province of residence'],['role',null,'Position']],
   2:[['weeklyHours','weekly-hours','Weekly schedule']],
-  3:[['agreementRead','agreement-read','Agreement acknowledgement'],['agreementSignature','agreement-signature','Agreement signature']],
-  4:[['paymentMethod',null,'Select how you would like to be paid'],['paymentConsent','payment-consent','Confirm payment preferences'],['paymentDetail','payment-detail','Payment account detail']]
+  3:[['paymentMethod',null,'Select how you would like to be paid'],['paymentConsent','payment-consent','Confirm payment preferences'],['paymentDetail','payment-detail','Payment account detail']]
 };
 function issues(i){
   const result=[];
@@ -188,7 +149,6 @@ function issues(i){
     if(key==='role'&&!roles.some(([r,open])=>open&&r===value))result.push({id,label,reason:'Select an available position'});
 
   }
-  if(i===3 && state.agreementRole!==`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}` && !result.some(x=>x.id==='agreement-read'))result.unshift({id:'agreement-read',label:'Acknowledge the agreement for your selected role',reason:'Review and acknowledge your current agreement'});
   return result;
 }
 function showIssues(i){
@@ -209,144 +169,6 @@ function showIssues(i){
   else{status.textContent='';status.removeAttribute('role')}
   return found;
 }
-// Export the exact agreement displayed for this role, together with the drawn signature.
-// Self-contained PDF writer: does not need a CDN or third-party library.
-function pdfSafe(s){
- return String(s??'').normalize('NFKD').replace(/[^\x20-\x7e]/g,c=>({'\u2014':'-','\u2013':'-','\u2019':"'",'\u201c':'"','\u201d':'"'}[c]||' ')).replace(/[\\()]/g,'\\$&');
-}
-function pdfLines(text,maxChars=88){
- const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');
- const lines=[];let line='';
- for(const word of words){
-  if((line+' '+word).trim().length>maxChars&&line){lines.push(line);line='';}
-  if(word.length>maxChars){if(line){lines.push(line);line='';}for(let i=0;i<word.length;i+=maxChars)lines.push(word.slice(i,i+maxChars));}
-  else line=(line+' '+word).trim();
- }
- if(line)lines.push(line);return lines;
-}
-async function signedAgreementPdfBlob(panel){
- const source=state.agreementSignature;
- const image=new Image();
- image.src=source;
- await image.decode();
- // JPEG embeds directly in PDF without needing PNG alpha/zlib parsing.
- const canvas=document.createElement('canvas');canvas.width=image.naturalWidth||560;canvas.height=image.naturalHeight||155;
- const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');
- ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0);
- const jpeg=canvas.toDataURL('image/jpeg',0.92).split(',')[1];
- const binary=atob(jpeg);
- const jpg=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)jpg[i]=binary.charCodeAt(i);
- const encoder=new TextEncoder(),pieces=[];let offset=0;
- const add=bytes=>{pieces.push(bytes);offset+=bytes.length;};
- const put=text=>add(encoder.encode(text));
- const objects=[];const addObj=content=>{objects.push(content);return objects.length;};
- const catalog=addObj(null),pages=addObj(null);
- const font=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
- const fontBold=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
- const imgRef=addObj({image:true});
- const pagesList=[];
- let commands=[],y=746;
- const write=(text,size=10,bold=false,space=15)=>{
-  const lines=pdfLines(text,size>=13?73:92);
-  for(const line of lines){
-   if(y<60)newPage();
-   commands.push('BT /'+(bold?'F2':'F1')+' '+size+' Tf 52 '+y+' Td ('+pdfSafe(line)+') Tj ET');
-   y-=space;
-  }
- };
- const newPage=()=>{
-  if(commands.length){
-   const stream=commands.join('\n')+'\n';
-   const streamRef=addObj({stream});
-   const page=addObj({page:true,streamRef});pagesList.push(page);
-  }
-  commands=[];y=744;
- };
- write('STEADY HANDS LLC',17,true,23);
- y-=12;
- for(const el of panel.children){
-  const tag=el.tagName.toLowerCase();
-  const heading=tag==='h3'||tag==='h4';
-  const content=(el.innerText||el.textContent||'').trim();
-  if(!content)continue;
-  y-=heading?12:5;
-  write(content,tag==='h3'?14:heading?11:10,heading,heading?18:15);
- }
- if(y<230)newPage();
- y-=24;
- write('Employee acknowledgment and signature',12,true,20);
- const signedName=(state.name||user?.email||'Employee').trim();
- write('Name: '+signedName);write('Position: '+(state.role||'Not specified'));
- write('Signed on: '+new Date(state.agreementAt||Date.now()).toLocaleString());
- const signatureY=y-94;
- commands.push('q 250 0 0 70 52 '+signatureY+' cm /Sig Do Q');
- y=signatureY-24;
- write('Role-specific acknowledgment; not a final employer-issued offer.',8,false,12);
- 
- newPage();
- objects[catalog-1]='<< /Type /Catalog /Pages '+pages+' 0 R >>';
- objects[pages-1]='<< /Type /Pages /Kids ['+pagesList.map(i=>i+' 0 R').join(' ')+'] /Count '+pagesList.length+' >>';
- for(const p of pagesList){
-  const item=objects[p-1];
-  objects[p-1]='<< /Type /Page /Parent '+pages+' 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 '+font+' 0 R /F2 '+fontBold+' 0 R >> /XObject << /Sig '+imgRef+' 0 R >> >> /Contents '+item.streamRef+' 0 R >>';
- }
- put('%PDF-1.4\n');
- const offsets=[0];
- for(let i=0;i<objects.length;i++){
-  offsets.push(offset);put((i+1)+' 0 obj\n');
-  const obj=objects[i];
-  if(obj&&obj.image){
-   put('<< /Type /XObject /Subtype /Image /Width '+canvas.width+' /Height '+canvas.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpg.length+' >>\nstream\n');
-   add(jpg);put('\nendstream\n');
-  }else if(obj&&obj.stream!==undefined){
-   const data=encoder.encode(obj.stream);
-   put('<< /Length '+data.length+' >>\nstream\n');add(data);put('endstream\n');
-  }else put(obj+'\n');
-  put('endobj\n');
- }
- const xref=offset;
- put('xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n');
- for(let i=1;i<offsets.length;i++)put(String(offsets[i]).padStart(10,'0')+' 00000 n \n');
- put('trailer\n<< /Size '+(objects.length+1)+' /Root '+catalog+' 0 R >>\nstartxref\n'+xref+'\n%%EOF');
- return new Blob(pieces,{type:'application/pdf'});
-}
-async function downloadSignedAgreement(){
- const button=$('#download-signed-agreement'),status=$('#agreement-download-status');
- if(!button||!status)return;
- if(![0,1,2].every(isComplete)){status.textContent='Complete the first three steps before downloading.';return;}
- if(!state.complete)collectDraft();
- if(!isComplete(3)){status.textContent='Read and acknowledge the agreement, then draw your signature before downloading.';return;}
- const panel=$('#step-content .document-panel');
- if(!panel){status.textContent='Agreement is unavailable.';return;}
- button.disabled=true;status.textContent='Preparing PDF…';
- try{
-  const pdf=await signedAgreementPdfBlob(panel),url=URL.createObjectURL(pdf);
-  const a=document.createElement('a');a.href=url;
-  a.download='steady-hands-agreement-'+(state.name||'employee').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.pdf';
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
-  status.textContent='Your signed PDF is ready.';
- }catch(error){
-  console.error('Agreement PDF export failed',error);
-  status.textContent='PDF could not be generated. Please try again.';
- }finally{button.disabled=false;}
-}
-function initializeSignaturePad(sameTerms){
- const canvas=$('#agreement-signature');if(!canvas)return;
- const ctx=canvas.getContext('2d');if(!ctx)return;
- ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#132c50';
- let drawing=false,hasInk=false;
- const snapshot=()=>{if(hasInk)state.agreementSignature=canvas.toDataURL('image/png');};
- const point=e=>{const rect=canvas.getBoundingClientRect();return {x:(e.clientX-rect.left)*canvas.width/rect.width,y:(e.clientY-rect.top)*canvas.height/rect.height};};
- canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.1,p.y+.1);ctx.stroke();hasInk=true;snapshot();});
- canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasInk=true;});
- const end=e=>{if(!drawing)return;drawing=false;snapshot();};
- canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
- $('#clear-agreement-signature').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);state.agreementSignature='';hasInk=false;};
- if(sameTerms&&state.agreementSignature?.startsWith('data:image/')){
-  const savedImage=new Image();savedImage.onload=()=>{ctx.drawImage(savedImage,0,0,canvas.width,canvas.height);hasInk=true;};savedImage.src=state.agreementSignature;
- }
-}
 function collectDraft(){
  const value=id=>$('#'+id)?.value?.trim()??'';
  if(step===1){
@@ -354,8 +176,7 @@ function collectDraft(){
   state.role=$('input[name="team-role"]:checked')?.value||'';
  }
  if(step===2){state.weeklyHours=Number($('input[name="weekly-hours"]:checked')?.value)||null;}
- if(step===3){state.agreementRead=Boolean($('#agreement-read')?.checked);state.agreementRole=`${state.role}:${state.role==='Sales Associate'?(state.agreementTrack==='regular'?'regular':'trial'):'marketing'}:${Number(state.weeklyHours)}`;state.agreementAt=isComplete(3)?state.agreementAt||new Date().toISOString():'';}
- if(step===4){state.paymentMethod=$('input[name="payment-method"]:checked')?.value||state.paymentMethod||'';state.paymentDetail=$('#payment-detail')?.value.trim()??state.paymentDetail;state.paymentConsent=Boolean($('#payment-consent')?.checked)}
+ if(step===3){state.paymentMethod=$('input[name="payment-method"]:checked')?.value||state.paymentMethod||'';state.paymentDetail=$('#payment-detail')?.value.trim()??state.paymentDetail;state.paymentConsent=Boolean($('#payment-consent')?.checked)}
 }
 
 function askAboutIncomplete(){
@@ -378,7 +199,7 @@ function askAboutIncomplete(){
 // Final-review checklist: show only missing required items, grouped by page.
 function completionProblems(){
  const groups=[];
- for(const index of [1,2,3,4]){
+ for(const index of [1,2,3]){
   const items=issues(index);
   if(items.length)groups.push({index,title:sections[index],items});
  }
@@ -441,7 +262,7 @@ async function jumpToStep(target){
  }catch(e){step=previous;$('#status').textContent='Could not save your progress. Please try again.'}
  finally{saving=false}
 }
-async function persist(){const {error}=await supabase.auth.updateUser({data:{steadyhands_onboarding:{...state,step,updatedAt:new Date().toISOString()}}});if(error){$('#status').textContent='Could not save your progress: '+error.message;return false}return true}
+async function persist(){const {agreementRead,agreementName,agreementSignature,agreementAt,agreementTrack,agreementRole,...profile}=state;const {error}=await supabase.auth.updateUser({data:{steadyhands_onboarding:{...profile,step,updatedAt:new Date().toISOString()}}});if(error){$('#status').textContent='Could not save your progress: '+error.message;return false}return true}
 function showSuccess(){
  const dialog=$('#onboarding-success');
  if(dialog && !dialog.open) dialog.showModal();
@@ -451,11 +272,11 @@ $('#next').onclick=async()=>{
  collectDraft();
  const problems=issues(step);
  if(problems.length && !await askAboutIncomplete()){showIssues(step);return;}
- if(step===4 && showCompletionChecklist())return;
+ if(step===3 && showCompletionChecklist())return;
  saving=true;
  const button=$('#next');button.disabled=true;button.textContent='Saving…';
  const oldStep=step, oldComplete=state.complete;
- if(step===4){if(!sections.every((_,i)=>isComplete(i))){showCompletionChecklist();button.disabled=false;render();return;}state.complete=true;state.completedAt=new Date().toISOString()}
+ if(step===3){if(!sections.every((_,i)=>isComplete(i))){showCompletionChecklist();button.disabled=false;render();return;}state.complete=true;state.completedAt=new Date().toISOString()}
  else step++;
  try{
   if(await persist()){
@@ -473,7 +294,7 @@ $('#back').onclick=async()=>{
  if(await persist()){render();window.scrollTo(0,0)}else{step=previous;render()}
  saving=false;$('#back').disabled=false;
 };
-$('#return-review').onclick=()=>{if(!state.complete)return;step=4;render();window.scrollTo(0,0)};
+$('#return-review').onclick=()=>{if(!state.complete)return;step=3;render();window.scrollTo(0,0)};
 $('#success-training').onclick=()=>location.assign('training.html');
 $('#success-later').onclick=()=>$('#onboarding-success').close();
 $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('login.html')};
@@ -490,7 +311,18 @@ if(!progressError&&serverProgress?.reset_at){
    if(clearError)console.warn('Could not clear old onboarding metadata:',clearError.message);
  }
 }
-if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMethod==='applecash')state.paymentMethod='applepay';if(!state.country&&state.region)state.country='United States';if(Number(saved.onboardingVersion)!==5){if(![10,20].includes(Number(saved.weeklyHours))){state.weeklyHours=20;}state.agreementRead=false;state.agreementName='';state.agreementAt='';state.agreementRole='';const oldStep=Number(saved.step)||0;step=state.complete?4:Math.max(0,Math.min(4,oldStep>=2?oldStep+1:oldStep));state.onboardingVersion=5;}else{step=state.complete?4:Math.max(0,Math.min(4,Number(saved.step)||0));}if(!state.email)state.email=u.email||''}else{state.name=u.user_metadata?.full_name||u.user_metadata?.name||'';state.email=u.email||''}if(state.complete&&!sections.every((_,i)=>isComplete(i))){
+if(saved&&typeof saved==='object'){
+ state={...state,...saved};
+ if(state.paymentMethod==='applecash')state.paymentMethod='applepay';
+ if(!state.country&&state.region)state.country='United States';
+ if(state.role==='Marketing Director')state.role='Digital Growth Coordinator';
+ const oldStep=Number(saved.step)||0;
+ const version=Number(saved.onboardingVersion)||0;
+ step=state.complete?3:Math.max(0,Math.min(3,version===5?(oldStep>=3?oldStep-1:oldStep):version===6?oldStep:Math.min(oldStep,2)));
+ state.onboardingVersion=6;
+ if(!state.email)state.email=u.email||'';
+}else{state.name=u.user_metadata?.full_name||u.user_metadata?.name||'';state.email=u.email||'';}
+if(state.complete&&!sections.every((_,i)=>isComplete(i))){
   state.complete=false;
   state.completedAt='';
   step=sections.findIndex((_,i)=>!isComplete(i));
@@ -498,3 +330,4 @@ if(saved&&typeof saved==='object'){state={...state,...saved};if(state.paymentMet
   if(correctionError)console.warn('Could not synchronize incomplete onboarding:',correctionError.message);
  }
  $('#private-app').hidden=false;$('#loading').hidden=true;$('#content').hidden=false;render();if(state.complete)showSuccess()}catch(e){$('#private-app').hidden=false;$('#loading').hidden=false;$('#loading').style.display='block';$('#loading').firstChild.textContent='Unable to load your account: '+(e?.message||'Please try again')+' ';const retry=document.getElementById('onboard-retry');if(retry){retry.hidden=false;retry.style.display='block'}console.error(e)}})();
+
