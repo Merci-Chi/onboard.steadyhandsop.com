@@ -62,7 +62,7 @@ BEGIN
 
   NEW.signed_at = now();
   RETURN NEW;
-END
+END;
 $function$;
 
 COMMIT;
