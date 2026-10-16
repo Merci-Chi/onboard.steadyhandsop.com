@@ -84,4 +84,32 @@ test('failed PDF generation can be retried',async()=>{
 test('already completed record is returned without overwriting PDF',async()=>{
  const {state,args}=setup();state.row={...state.row,status:'signed',signed_pdf_path:'owner/original.pdf'};const r=await saveAgreement(args);assert.equal(r.signed_pdf_path,'owner/original.pdf');assert.equal(state.uploadCount,0);
 });
+test('one associate can complete multiple assignments independently',async()=>{
+ const rows=new Map([
+  ['hourly-action',{...base,code:'hourly-action',document_key:'trial-hourly'}],
+  ['commission-action',{...base,code:'commission-action',document_key:'trial-commission'}]
+ ]);
+ const files=new Map();
+ const db={from:()=>{
+  const query=patch=>({filters:{},eq(key,value){this.filters[key]=value;return this},select(){return this},async maybeSingle(){
+   const row=rows.get(this.filters.code);
+   if(!row||Object.entries(this.filters).some(([key,value])=>row[key]!==value))return {data:null};
+   if(patch)Object.assign(row,patch);
+   return {data:{...row}};
+  }});
+  return {select:()=>query(),update:patch=>query(patch)};
+ },storage:{from:()=>({upload:async(path,blob)=>{assert(!files.has(path));files.set(path,blob);return {}}})}};
+ const args=code=>({db,assignment:{...rows.get(code)},user,name:'Test Person',date:'2026-10-19',signature:'signature',attempt:{},randomId:()=> 'separate-attempt',makePDF:async()=>new Uint8Array([37,80,68,70])});
+ const first=await saveAgreement(args('hourly-action'));
+ assert.equal(first.status,'signed');
+ assert.equal(rows.get('commission-action').status,'pending');
+ const originalPath=first.signed_pdf_path;
+ const second=await saveAgreement(args('commission-action'));
+ assert.equal(second.status,'signed');
+ assert.notEqual(second.signed_pdf_path,originalPath);
+ assert.equal(rows.get('hourly-action').signed_pdf_path,originalPath);
+ assert.equal(files.size,2);
+ await saveAgreement(args('hourly-action'));
+ assert.equal(files.size,2);
+});
 
