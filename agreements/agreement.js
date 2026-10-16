@@ -1,5 +1,6 @@
 import {supabase as db,ensureHealthySession} from '/supabase-client.js?v=20261015-reliability';
 import {saveAgreement,validateSigner} from './agreement-save.js?v=20261016-associate-name';
+import {overlayAgreement,signaturePNG,pdfText} from './pdf-overlays.js?v=20261016-transparent';
 const saveAttempt={};
 const $=id=>document.getElementById(id);let user=null,assignment=null,signedDoc=null,drawn=false,drawing=false;
 const KINDS={'trial-hourly':['Agreement - Sales Associate Trial: Hourly Pay (10 hrs / Week)','Sales-Associate-Trial-10-Hour-Hourly.pdf'],'trial-commission':['Agreement - Sales Associate Trial: Commission Pay (10 hrs / Week)','Sales-Associate-Trial-Commission.pdf'],'hourly-10':['Agreement - Sales Associate: Hourly Pay (10 hrs / Week)','Sales-Associate-Agreement-10-Hours.pdf'],'hourly-20':['Agreement - Sales Associate: Hourly Pay (20 hrs / Week)','Sales-Associate-Agreement-20-Hours.pdf'],'commission':['Agreement - Sales Associate: Commission Pay (10 hrs / Week)','Sales-Associate-Agreement-Commission.pdf'],'manager-10':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (10 hrs / Week)','Sales-Manager-Outline-10-Hours.pdf'],'manager-20':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (20 hrs / Week)','Sales-Manager-Outline-20-Hours.pdf']};
@@ -33,74 +34,39 @@ $('switch').onclick=async()=>{await db.auth.signOut();user=null;show('signin');s
 async function buildSignedPDF(raw,info){
  if(!window.PDFLib)throw Error('PDF signing library unavailable.');
  const doc=await PDFLib.PDFDocument.load(raw);
- const pages=doc.getPages(),first=pages[0],last=pages[pages.length-1];
  const font=await doc.embedFont(PDFLib.StandardFonts.Helvetica),bold=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
- const ink=PDFLib.rgb(.07,.16,.29),white=PDFLib.rgb(1,1,1),accent=PDFLib.rgb(.08,.35,.57);
- const isManager=managerKind(assignment.document_key),trial=assignment.document_key.startsWith('trial-');
- const A=assignment;const associate=info.name;
- const shortDate=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?match[2]+'/'+match[3]+'/'+match[1].slice(2):String(value||'');};
- const fit=(value,maxWidth,size=9)=>{let t=String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,'?').trim();while(t.length&&font.widthOfTextAtSize(t,size)>maxWidth)t=t.slice(0,-1);return t;};
- // Precisely cover only the empty underline, never the adjoining field labels.
- // top is measured from the top of the A4 page in PDF points.
- function field(page,x,top,w,value,size=9){
-  const y=page.getHeight()-top-14;
-  page.drawRectangle({x,y,width:w,height:15,color:white});
-  const valueText=fit(value,w-4,size);
-  page.drawText(valueText,{x:x+2,y:y+3,size,font,color:ink});
- }
- if(isManager){
-  field(first,236,115,160,associate,9);
-  field(first,118,132,85,shortDate(A.effective_date),8.5);
-  field(first,275,132,151,A.work_location,8.5);
- }else{
-  field(first,239,115,assignment.document_key.startsWith('trial-')?226:145,associate,9);
-  if(trial){
-   const endDate=new Date(A.effective_date+'T12:00:00Z');endDate.setUTCDate(endDate.getUTCDate()+13);
-   field(first,101,140,77,shortDate(A.effective_date),8.5);
-   field(first,229,140,77,shortDate(endDate.toISOString().slice(0,10)),8.5);
-   field(first,454,140,75,A.work_location,8.2);
-  }else{
-   field(first,101,140,77,shortDate(A.effective_date),8.5);
-   field(first,326,140,98,A.work_location,8.5);
-  }
- }
- const signTop=isManager?659:trial?504:assignment.document_key==='commission'?487:462;
- const dateX=isManager?320:trial?362:335;
- if(!isManager){
-  const imgBytes=Uint8Array.from(atob(info.signature.split(',')[1]),c=>c.charCodeAt(0));
-  const image=await doc.embedPng(imgBytes);
-  const iw=image.width,ih=image.height,scale=Math.min(140/iw,25/ih);
-  const y=last.getHeight()-signTop-12;
-  // The PNG retains alpha transparency: no white background or rectangle.
-  last.drawImage(image,{x:154,y:y-1,width:iw*scale,height:ih*scale});
- }else{
-  // Manager track is acknowledgment only; no drawn signature or contractual execution.
-  field(last,153,signTop,148,info.name,8.5);
- }
- field(last,dateX,signTop,96,shortDate(info.date),9);
+ const ink=PDFLib.rgb(.07,.16,.29),accent=PDFLib.rgb(.08,.35,.57);
+ const isManager=managerKind(assignment.document_key),A=assignment;
+ await overlayAgreement({doc,PDFLib,kind:assignment.document_key,assignment:A,...info});
  // The complete audit certificate makes every saved value available even when
  // the underlying PDF's short underline is too narrow for the full details.
  const page=doc.addPage([595.28,841.89]);
- const line=(label,value,y)=>{page.drawText(label,{x:47,y,size:10,font:bold,color:ink});
- page.drawText(fit(value,430,10),{x:47,y:y-19,size:10,font,color:ink});};
+ const line=(label,value,y)=>{
+  page.drawText(label,{x:47,y,size:10,font:bold,color:ink});
+  const words=pdfText(value).split(/\s+/);let text='',row=0;
+  for(const word of words){
+   if(text&&font.widthOfTextAtSize(text+' '+word,10)>490){page.drawText(text,{x:47,y:y-19-row*12,size:10,font,color:ink});row++;text=word;}
+   else text+=(text?' ':'')+word;
+  }
+  page.drawText(text,{x:47,y:y-19-row*12,size:10,font,color:ink});
+ };
  page.drawText('STEADY HANDS LLC',{x:47,y:789,size:17,font:bold,color:accent});
  page.drawText(isManager?'ACKNOWLEDGMENT RECORD':'ELECTRONIC SIGNATURE CERTIFICATE',{x:47,y:752,size:15,font:bold,color:ink});
  page.drawLine({start:{x:47,y:739},end:{x:548,y:739},thickness:1,color:ink});
  line('Document',KINDS[assignment.document_key][0],713);
- line('Associate (entered on onboarding)',associate,665);
- line('Effective date / trial start',A.effective_date,617);
- line('Work location',A.work_location,569);
- line('Full legal name entered by associate',info.name,521);
- line('Date entered by associate',info.date,473);
- line('Account email',user.email||'',425);
- line('Assignment reference',code,377);
- line('Submitted at (UTC)',info.stamp,329);
+ line('Effective date / trial start',A.effective_date,665);
+ line('Work location',A.work_location,617);
+ line('Full legal name entered by associate',info.name,569);
+ line('Date entered by associate',info.date,521);
+ line('Account email',user.email||'',473);
+ line('Assignment reference',code,425);
+ line('Submitted at (UTC)',info.stamp,377);
  if(!isManager){
-  page.drawText('Drawn signature',{x:47,y:273,size:10,font:bold,color:ink});
+  page.drawText('Drawn signature',{x:47,y:321,size:10,font:bold,color:ink});
   const imgBytes=Uint8Array.from(atob(info.signature.split(',')[1]),c=>c.charCodeAt(0));
   const image=await doc.embedPng(imgBytes),scale=Math.min(280/image.width,88/image.height);
-  page.drawImage(image,{x:50,y:163,width:image.width*scale,height:image.height*scale});
- }else page.drawText('Acknowledged only — no drawn signature required.',{x:47,y:260,size:11,font,color:ink});
+  page.drawImage(image,{x:50,y:211,width:image.width*scale,height:image.height*scale});
+ }else page.drawText('Acknowledged only — no drawn signature required.',{x:47,y:308,size:11,font,color:ink});
  page.drawText('The original agreement pages precede this audit record.',{x:47,y:80,size:9,font,color:ink});
  return await doc.save();
 }
@@ -134,7 +100,7 @@ $('sign').onsubmit=async e=>{
   if(health.data?.session?.user?.id!==user.id)throw Error('Your account changed. Reload this page before signing.');
   status('Preparing and saving your agreement. Keep this page open…');
   await pdfLib();
-  const signature=isManager?null:canvas.toDataURL('image/png');
+  const signature=isManager?null:signaturePNG(canvas);
   const result=await saveAgreement({db,assignment,user,name,date,signature,attempt:saveAttempt,makePDF:async stamp=>{
    const response=await fetch(pdfURL(assignment.document_key));
    if(!response.ok)throw Error('The original agreement PDF could not be loaded (HTTP '+response.status+').');
