@@ -22,13 +22,13 @@
 <a id="openpdf" class="outline link" target="_blank" rel="noopener" href="#">Open agreement PDF ↗</a><p class="tip">Read the full agreement in the viewer below or open/download it before signing.</p>
 <label class="check"><input type="checkbox" id="read" required><span>I have opened or reviewed the agreement and understand its terms.</span></label>
 <label class="check"><input type="checkbox" id="agree" required><span id="agreeText">I accept the agreement terms and consent to sign electronically.</span></label>
-<label>Full legal name<input id="fullName" type="text" autocomplete="name" minlength="3" maxlength="120" placeholder="Enter your full legal name" required></label>
+<label>Full legal name<input id="fullName" type="text" autocomplete="name" minlength="3" maxlength="120" placeholder="Enter your full legal name" required></label><p class="tip">Enter your own full legal name. This name will be saved with your signature or acknowledgment and included in your completed PDF.</p>
 <label>Signature date<input id="date" type="date" required></label>
 <div id="signatureFields"><label>Draw your signature</label><div class="sig"><canvas id="pad" aria-label="Draw your signature here"></canvas></div><button id="clear" class="outline sm" type="button">Clear signature</button></div><p class="tip" id="actionTip">Submission time is recorded by the database. Signing cannot be undone or edited after submission.</p>
 <button id="submit" class="primary" type="submit">Accept & Sign Agreement</button></form>
 <section id="complete" hidden><div class="checkmark">✓</div><h2 id="completeTitle">Agreement signed</h2><p id="completeInfo">Your agreement has been submitted and recorded. You can download the signed copy here.</p><button id="download" class="primary" type="button">Download signed PDF</button><p class="tip" id="completeTip">If you need a correction, contact your administrator. Your saved signature cannot be edited from this page.</p></section>
 </section><aside class="paper"><div class="paperbar"><b id="rightTitle">Assigned actions</b><small>PDF · original terms unchanged</small></div><div id="assignedDashboard" class="assignment-dashboard" hidden><div id="assignmentItems" aria-live="polite"></div></div><iframe id="pdf" title="Assigned agreement PDF" loading="lazy"></iframe><p id="pdfhint">The agreement will appear after you sign in.</p></aside></div></main>
-<footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261015-reliable-save"></script><script type="module" src="/agreements/assigned-actions.js?v=20261015-session-health"></script><script type="module">
+<footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261016-associate-name"></script><script type="module" src="/agreements/assigned-actions.js?v=20261015-session-health"></script><script type="module">
 import {supabase} from '/supabase-client.js?v=20261015-reliability';
 const back=document.getElementById('agreement-back');
 const code=new URLSearchParams(location.search).get('code')||location.pathname.split('/').filter(Boolean).slice(1)[0]||'';
@@ -39,5 +39,6 @@ document.getElementById('agreement-signout')?.addEventListener('click',async()=>
  catch(error){button.disabled=false;button.textContent='Sign out';alert('Unable to sign out: '+(error.message||error))}
 });
 </script></body></html>
+
 
 

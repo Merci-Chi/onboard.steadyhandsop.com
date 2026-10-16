@@ -1,8 +1,8 @@
 export const normalizedName = value => String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
 export function validateSigner(assignment,user,name){
  if(assignment.user_id !== user.id) throw Error('This agreement belongs to a different account. Contact your administrator.');
- if(!assignment.associate_name?.trim()) throw Error('The assigned associate name is missing. Contact your administrator before signing.');
- if(normalizedName(name)!==normalizedName(assignment.associate_name)) throw Error('Your entered name does not match the assigned associate: '+assignment.associate_name+'. Ask your administrator to correct the assignment before signing.');
+ const legalName=String(name||'').trim();
+ if(legalName.length<3||legalName.length>120) throw Error('Enter your full legal name (3–120 characters).');
 }
 export function attemptId(){
  if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
@@ -56,3 +56,4 @@ export async function saveAgreement({db,assignment,user,name,date,signature,make
  }
  return {...row,...patch,signed_at:result.data.signed_at};
 }
+

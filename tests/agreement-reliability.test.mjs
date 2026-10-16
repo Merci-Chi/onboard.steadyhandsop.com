@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
 import {guardedFetch,recoverSession,TOKEN_HELP} from '../session-health.js';
 import {saveAgreement,validateSigner} from '../agreements/agreement-save.js';
 const base={code:'abc12345',user_id:'owner',document_key:'trial-hourly',status:'pending',associate_name:'Test Person',effective_date:'2026-10-19',work_location:'Nevada'};
@@ -31,10 +33,32 @@ test('existing large session recovers after server hook issues compact token',as
 test('still-large token gives action message instead of endless refresh',async()=>{
  let count=0;const session={access_token:'x'.repeat(20000)};const r=await recoverSession({getSession:async()=>({data:{session}}),refreshSession:async()=>{count++;return {data:{session}}}});assert.equal(r.error.message,TOKEN_HELP);assert.equal(count,1);
 });
-test('wrong account and wrong assigned name cannot sign',()=>{
+test('only the assigned account can enter a legal name',()=>{
  assert.throws(()=>validateSigner(base,{id:'other'},'Test Person'),/different account/);
- assert.throws(()=>validateSigner({...base,associate_name:'Someone Else'},user,'Test Person'),/does not match/);
- validateSigner({...base,associate_name:'Tést Person'},user,'TEST PERSON');
+ validateSigner({...base,associate_name:null},user,'Test Person');
+ validateSigner({...base,associate_name:'Someone Else'},user,'Test Person');
+ for(const name of ['', '  ', 'Al', 'a'.repeat(121)])assert.throws(()=>validateSigner(base,user,name),/full legal name/);
+});
+test('associate-entered name is saved even when admin name is absent or different',async()=>{
+ for(const oldName of [null,'Awaiting associate entry','Old Admin Name']){
+  const {state,args}=setup();state.row.associate_name=oldName;args.assignment.associate_name=oldName;args.name='Associate Legal Name';
+  const r=await saveAgreement(args);assert.equal(r.signature_name,'Associate Legal Name');assert.equal(state.row.signature_name,'Associate Legal Name');assert.equal(r.status,'signed');
+ }
+});
+test('completed PDF uses the entered name for the associate field and certificate',async()=>{
+ const source=await readFile(new URL('../agreements/agreement.js',import.meta.url),'utf8');
+ const build=source.slice(source.indexOf('async function buildSignedPDF('),source.indexOf('let pdfLibraryPromise;'));
+ const texts=[];
+ const page={getHeight:()=>842,drawRectangle(){},drawText:text=>texts.push(text),drawLine(){}};
+ const doc={getPages:()=>[page],embedFont:async()=>({widthOfTextAtSize:text=>text.length*4}),addPage:()=>page,save:async()=>new Uint8Array([37,80,68,70])};
+ const PDFLib={PDFDocument:{load:async()=>doc},StandardFonts:{Helvetica:'regular',HelveticaBold:'bold'},rgb:()=>({})};
+ const context={window:{PDFLib},PDFLib,assignment:{...base,document_key:'manager-10',associate_name:'Wrong Admin Name'},managerKind:()=>true,KINDS:{'manager-10':['Manager Outline']},user:{email:'associate@example.com'},code:base.code};
+ vm.createContext(context);
+ vm.runInContext(build,context);
+ await context.buildSignedPDF(new Uint8Array(),{name:'Entered Legal Name',date:'2026-10-19',stamp:'2026-10-19T12:00:00Z'});
+ assert.equal(texts.filter(t=>t==='Entered Legal Name').length,4);
+ assert(!texts.includes('Wrong Admin Name'));
+ assert(texts.includes('Associate (entered on onboarding)'));
 });
 test('normal submission saves PDF before completion and uses owner filter',async()=>{
  const {state,args}=setup();const r=await saveAgreement(args);assert.equal(r.status,'signed');assert.equal(state.uploadCount,1);assert.equal(state.files.size,1);assert.equal(r.signed_pdf_path,'owner/abc12345-attempt-one.pdf');
@@ -60,3 +84,4 @@ test('failed PDF generation can be retried',async()=>{
 test('already completed record is returned without overwriting PDF',async()=>{
  const {state,args}=setup();state.row={...state.row,status:'signed',signed_pdf_path:'owner/original.pdf'};const r=await saveAgreement(args);assert.equal(r.signed_pdf_path,'owner/original.pdf');assert.equal(state.uploadCount,0);
 });
+

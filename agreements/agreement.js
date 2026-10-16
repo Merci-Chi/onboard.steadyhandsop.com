@@ -1,5 +1,5 @@
 import {supabase as db,ensureHealthySession} from '/supabase-client.js?v=20261015-reliability';
-import {saveAgreement,validateSigner} from './agreement-save.js';
+import {saveAgreement,validateSigner} from './agreement-save.js?v=20261016-associate-name';
 const saveAttempt={};
 const $=id=>document.getElementById(id);let user=null,assignment=null,signedDoc=null,drawn=false,drawing=false;
 const KINDS={'trial-hourly':['Agreement - Sales Associate Trial: Hourly Pay (10 hrs / Week)','Sales-Associate-Trial-10-Hour-Hourly.pdf'],'trial-commission':['Agreement - Sales Associate Trial: Commission Pay (10 hrs / Week)','Sales-Associate-Trial-Commission.pdf'],'hourly-10':['Agreement - Sales Associate: Hourly Pay (10 hrs / Week)','Sales-Associate-Agreement-10-Hours.pdf'],'hourly-20':['Agreement - Sales Associate: Hourly Pay (20 hrs / Week)','Sales-Associate-Agreement-20-Hours.pdf'],'commission':['Agreement - Sales Associate: Commission Pay (10 hrs / Week)','Sales-Associate-Agreement-Commission.pdf'],'manager-10':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (10 hrs / Week)','Sales-Manager-Outline-10-Hours.pdf'],'manager-20':['Acknowledgment – Sales Manager: Responsibilities & Compensation Outline (20 hrs / Week)','Sales-Manager-Outline-20-Hours.pdf']};
@@ -24,7 +24,7 @@ const {data,error}=await db.from('sh_individual_agreement_actions').select('code
 if(error){show('missing');status('Could not check agreement: '+error.message,true);return;}
 if(!data||!KINDS[data.document_key]){show('missing');status('No agreement is assigned to this account for this link.',true);return;}
 assignment=data;$('title').textContent=KINDS[data.document_key][0];$('kind').textContent=KINDS[data.document_key][0];$('recipient').textContent=user.email||'';$('intro').textContent='Review, acknowledge, and electronically sign your individually assigned agreement.';
-const isManager=managerKind(data.document_key);$('steps').innerHTML=isManager?'<b>1</b> Review the PDF <span>→</span><b>2</b> Confirm understanding <span>→</span><b>3</b> Acknowledge':'<b>1</b> Review the PDF <span>→</span><b>2</b> Accept terms <span>→</span><b>3</b> Sign';$('agreeText').textContent=isManager?'I acknowledge receiving, reading, and understanding the Sales Manager responsibilities and compensation outline. This acknowledgment does not constitute a new signed agreement.':'I accept the agreement terms and consent to sign electronically.';$('signatureFields').hidden=isManager;$('submit').textContent=isManager?'Submit Acknowledgment':'Accept & Sign Agreement';$('actionTip').textContent=isManager?'Your acknowledgment PDF includes the assigned associate, effective date, work location, your name, and acknowledgment date. No drawn signature is required.':'Submission time is recorded by the database. Signing cannot be undone or edited after submission.';$('intro').textContent=isManager?'Review your assigned Sales Manager responsibilities and compensation outline and acknowledge receipt and understanding. No agreement signature is required.':'Review, acknowledge, and electronically sign your individually assigned agreement.';(document.getElementById('assignmentDetails')||(()=>{const p=document.createElement('p');p.id='assignmentDetails';p.className='tip';$('openpdf').before(p);return p})()).textContent='Associate: '+(data.associate_name||'Not provided')+' · Effective date: '+(data.effective_date||'Not provided')+' · Work location: '+(data.work_location||'Not provided');$('openpdf').href=pdfURL(data.document_key);$('pdf').src=pdfURL(data.document_key)+'#toolbar=1';$('pdfhint').hidden=true;
+const isManager=managerKind(data.document_key);$('steps').innerHTML=isManager?'<b>1</b> Review the PDF <span>→</span><b>2</b> Confirm understanding <span>→</span><b>3</b> Acknowledge':'<b>1</b> Review the PDF <span>→</span><b>2</b> Accept terms <span>→</span><b>3</b> Sign';$('agreeText').textContent=isManager?'I acknowledge receiving, reading, and understanding the Sales Manager responsibilities and compensation outline. This acknowledgment does not constitute a new signed agreement.':'I accept the agreement terms and consent to sign electronically.';$('signatureFields').hidden=isManager;$('submit').textContent=isManager?'Submit Acknowledgment':'Accept & Sign Agreement';$('actionTip').textContent=isManager?'Your acknowledgment PDF includes the full legal name you enter here, effective date, work location, and acknowledgment date. No drawn signature is required.':'Submission time is recorded by the database. Signing cannot be undone or edited after submission.';$('intro').textContent=isManager?'Review your assigned Sales Manager responsibilities and compensation outline and acknowledge receipt and understanding. No agreement signature is required.':'Review, acknowledge, and electronically sign your individually assigned agreement.';(document.getElementById('assignmentDetails')||(()=>{const p=document.createElement('p');p.id='assignmentDetails';p.className='tip';$('openpdf').before(p);return p})()).textContent='Effective date: '+(data.effective_date||'Not provided')+' · Work location: '+(data.work_location||'Not provided');$('openpdf').href=pdfURL(data.document_key);$('pdf').src=pdfURL(data.document_key)+'#toolbar=1';$('pdfhint').hidden=true;
 if(data.status==='signed'||data.status==='acknowledged'){show('complete');showCompleted(data);status((isManager?'Acknowledged':'Signed')+' on '+new Date(data.signed_at).toLocaleString());return;}
 show('sign');status('Please read the document and complete each required field.');requestAnimationFrame(sizePad);
 }
@@ -37,7 +37,7 @@ async function buildSignedPDF(raw,info){
  const font=await doc.embedFont(PDFLib.StandardFonts.Helvetica),bold=await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const ink=PDFLib.rgb(.07,.16,.29),white=PDFLib.rgb(1,1,1),accent=PDFLib.rgb(.08,.35,.57);
  const isManager=managerKind(assignment.document_key),trial=assignment.document_key.startsWith('trial-');
- const A=assignment;const associate=A.associate_name||info.name;
+ const A=assignment;const associate=info.name;
  const shortDate=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?match[2]+'/'+match[3]+'/'+match[1].slice(2):String(value||'');};
  const fit=(value,maxWidth,size=9)=>{let t=String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,'?').trim();while(t.length&&font.widthOfTextAtSize(t,size)>maxWidth)t=t.slice(0,-1);return t;};
  // Precisely cover only the empty underline, never the adjoining field labels.
@@ -87,7 +87,7 @@ async function buildSignedPDF(raw,info){
  page.drawText(isManager?'ACKNOWLEDGMENT RECORD':'ELECTRONIC SIGNATURE CERTIFICATE',{x:47,y:752,size:15,font:bold,color:ink});
  page.drawLine({start:{x:47,y:739},end:{x:548,y:739},thickness:1,color:ink});
  line('Document',KINDS[assignment.document_key][0],713);
- line('Associate (assigned by Admin)',associate,665);
+ line('Associate (entered on onboarding)',associate,665);
  line('Effective date / trial start',A.effective_date,617);
  line('Work location',A.work_location,569);
  line('Full legal name entered by associate',info.name,521);
@@ -155,4 +155,5 @@ $('download').onclick=async()=>{
  }catch(error){status('Could not download PDF: '+error.message,true)}finally{button.disabled=false;}
 };
 if(code)display().catch(e=>{status('Unable to open action: '+e.message,true);show('missing')});
+
 
