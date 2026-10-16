@@ -61,7 +61,6 @@ $('#logout').onclick=async()=>{await supabase.auth.signOut();location.replace('l
   const {data:{user:current},error}=await supabase.auth.getUser();
   if(error||!current){location.replace('login.html');return}
   user=current;$('#account-email').textContent=user.email||'';
-  if(!user.user_metadata?.steadyhands_onboarding?.complete){location.replace('index.html');return}
   const saved=user.user_metadata?.steadyhands_training?.completedLessons;
   if(Array.isArray(saved))completed=new Set(saved.filter(x=>Number.isInteger(x)&&x>=0&&x<lessons.length));
   render();$('#training-loading').hidden=true;$('#training-app').hidden=false;
