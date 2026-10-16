@@ -1,0 +1,1 @@
+// Legacy demo app removed. Portal uses portal.js with Supabase authentication.\n

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#102945" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-touch-fullscreen" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Outreach" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" sizes="192x192" href="images/icon-192.png" />
+  <title>My Leads | Steady Hands</title>
+
+  <link rel="stylesheet" href="styles.css?v=20261012-my-leads" />
+  <link rel="stylesheet" href="sidebar.css?v=batch2" />
+  <link rel="stylesheet" href="my-leads.css?v=20261012-readable-scroll-v2" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script src="theme.js?v=20261005-account-theme"></script>
+  <script src="sidebar.js?v=batch9-menu-fix-1" defer></script>
+</head>
+<body class="page-leads page-my-leads">
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-row">
+        <h1>My Leads</h1>
+      </div>
+    </header>
+
+    <main class="content my-leads-content">
+      <div id="myLeadsStatus" class="my-leads-notice" role="status" aria-live="polite" hidden></div>
+      <section class="my-leads-toolbar-card">
+        <div class="my-leads-toolbar-row my-leads-toolbar-top">
+          <label class="my-search-wrap" for="leadSearch">
+            <i data-lucide="search"></i>
+            <input id="leadSearch" type="search" placeholder="Search company, contact name, phone, email, or location…" autocomplete="off" />
+          </label>
+
+          <label class="toolbar-page-size" for="pageSizeSelect">
+            <select id="pageSizeSelect" aria-label="Leads per page">
+              <option value="10">10 per page</option>
+              <option value="25">25 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+              <option value="500">500 per page</option>
+            </select>
+            <i data-lucide="chevron-down"></i>
+          </label>
+        </div>
+
+        <div class="my-stats-grid">
+          <article class="my-stat-card">
+            <div class="my-stat-icon blue"><i data-lucide="users"></i></div>
+            <div>
+              <strong id="statTotalAssigned">0</strong>
+              <span>Total Assigned</span>
+            </div>
+          </article>
+          <article class="my-stat-card">
+            <div class="my-stat-icon sky"><i data-lucide="funnel"></i></div>
+            <div>
+              <strong id="statMatching">0</strong>
+              <span>Matching Filters</span>
+            </div>
+          </article>
+          <article class="my-stat-card">
+            <div class="my-stat-icon green"><i data-lucide="list"></i></div>
+            <div>
+              <strong id="statOnPage">0</strong>
+              <span>On This Page</span>
+            </div>
+          </article>
+          <article class="my-stat-card">
+            <div class="my-stat-icon purple"><i data-lucide="phone-forwarded"></i></div>
+            <div>
+              <strong id="statFollowUps">0</strong>
+              <span>Follow Ups</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+
+      <section class="my-table-card">
+        <div class="my-table-topbar">
+          <button type="button" class="table-filter-button" id="openFiltersBtn" aria-label="Sort and filter leads" title="Sort and filter leads">
+            <i data-lucide="sliders-horizontal"></i>
+            <span>Sort &amp; Filter</span>
+            <span id="filterBadge" class="table-filter-count" hidden></span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <button type="button" class="table-filter-button ml-bulk-queue-btn" id="bulkAddToQueueBtn" disabled title="Select leads to add to a queue"><i data-lucide="list-plus"></i><span>Add to Queue</span><span id="bulkQueueCount" class="ml-bulk-count" hidden></span></button>
+          <div class="my-pagination-inline" id="paginationTop"></div>
+        </div>
+
+        <div class="my-table-scroller">
+          <table class="my-leads-table">
+            <thead>
+              <tr>
+                <th class="col-select">
+                  <button type="button" class="header-pill header-select" id="toggleAllVisible" aria-label="Select all visible">
+                    <span class="checkbox-shell" id="headerCheckbox"></span>
+                    <i data-lucide="chevron-down"></i>
+                  </button>
+                </th>
+                <th class="col-company">
+                  <button type="button" class="header-pill sort-pill" data-sort="company">
+                    <i data-lucide="building-2"></i>
+                    <span>Company / Business</span>
+                    <span class="sort-pair"><i data-lucide="chevrons-up-down"></i></span>
+                  </button>
+                </th>
+                <th class="col-contact">
+                  <button type="button" class="header-pill sort-pill" data-sort="contact">
+                    <i data-lucide="user-round"></i>
+                    <span>Contact</span>
+                    <span class="sort-pair"><i data-lucide="chevrons-up-down"></i></span>
+                  </button>
+                </th>
+                <th class="col-phone">
+                  <button type="button" class="header-pill sort-pill" data-sort="phone">
+                    <i data-lucide="phone"></i>
+                    <span>Phone / Email</span>
+                    <span class="sort-pair"><i data-lucide="chevrons-up-down"></i></span>
+                  </button>
+                </th>
+                <th class="col-location">
+                  <button type="button" class="header-pill sort-pill" data-sort="location">
+                    <i data-lucide="map-pin"></i>
+                    <span>Location (Local Time)</span>
+                    <span class="sort-pair"><i data-lucide="chevrons-up-down"></i></span>
+                  </button>
+                </th>
+                <th class="col-tags">
+                  <button type="button" class="header-pill filter-pill" id="headerTagsBtn" aria-label="Filter tags" title="Filter tags">
+                    <i data-lucide="tag"></i>
+                    <span>Tags</span>
+                    <i data-lucide="chevron-down"></i>
+                  </button>
+                </th>
+                <th class="col-source">
+                  <button type="button" class="header-pill filter-pill" id="headerSourcesBtn" aria-label="Filter sources" title="Filter sources">
+                    <i data-lucide="share-2"></i>
+                    <span>Source</span>
+                    <i data-lucide="chevron-down"></i>
+                  </button>
+                </th>
+                <th class="col-stage">
+                  <button type="button" class="header-pill filter-pill" id="headerStageBtn" aria-label="Filter stages" title="Filter stages" aria-haspopup="dialog" aria-controls="stageModal">
+                    <i data-lucide="chart-column"></i>
+                    <span>Stage</span>
+                    <i data-lucide="chevron-down"></i>
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="myLeadsTableBody">
+              <tr>
+                <td colspan="8" class="table-loading-row">Loading assigned leads…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="my-table-bottombar">
+          <div class="my-table-meta" id="tableMetaBottom">Showing 0–0 of 0 leads</div>
+          <div class="my-pagination-inline" id="paginationBottom"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="ml-modal-backdrop" id="modalBackdrop" hidden></div>
+
+  <section class="ml-modal" id="filtersModal" hidden aria-hidden="true" aria-labelledby="filtersTitle">
+    <div class="ml-modal-card">
+      <div class="ml-modal-head">
+        <div><h2 id="filtersTitle">Sort &amp; Filter</h2><p>Organize your assigned leads.</p></div>
+        <button type="button" class="modal-close" data-close-modal aria-label="Close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="ml-modal-body ml-sort-filter-body">
+        <div class="ml-sort-section"><h3>Sort by</h3><div class="ml-sort-grid" id="leadSortChoices">
+          <label class="ml-sort-card"><input type="radio" name="leadSort" value="newest" checked><i data-lucide="arrow-down-wide-narrow"></i><span>Newest First</span><i class="ml-choice-check" data-lucide="check-circle-2"></i></label>
+          <label class="ml-sort-card"><input type="radio" name="leadSort" value="oldest"><i data-lucide="arrow-up-wide-narrow"></i><span>Oldest First</span><i class="ml-choice-check" data-lucide="check-circle-2"></i></label>
+          <label class="ml-sort-card"><input type="radio" name="leadSort" value="az"><i data-lucide="arrow-down-a-z"></i><span>Alphabetical A–Z</span><i class="ml-choice-check" data-lucide="check-circle-2"></i></label>
+          <label class="ml-sort-card"><input type="radio" name="leadSort" value="za"><i data-lucide="arrow-up-z-a"></i><span>Alphabetical Z–A</span><i class="ml-choice-check" data-lucide="check-circle-2"></i></label>
+          <label class="ml-sort-card"><input type="radio" name="leadSort" value="recent"><i data-lucide="clock-3"></i><span>Recently Contacted</span><i class="ml-choice-check" data-lucide="check-circle-2"></i></label>
+          <label class="ml-sort-card"><input type="radio" name="leadSort" value="least"><i data-lucide="phone"></i><span>Least Recently Contacted</span><i class="ml-choice-check" data-lucide="check-circle-2"></i></label>
+        </div></div>
+        <div class="ml-sort-section"><h3>Contact status</h3><div class="ml-filter-radio-row"><label><input type="radio" name="leadContact" value="all" checked> All leads</label><label><input type="radio" name="leadContact" value="never"> Never contacted</label><label><input type="radio" name="leadContact" value="called"> Previously contacted</label></div></div>
+        <div class="ml-sort-section"><h3>Site preview</h3><div class="ml-filter-radio-row"><label><input type="radio" name="leadPreview" value="all" checked> All</label><label><input type="radio" name="leadPreview" value="yes"> Has site preview</label><label><input type="radio" name="leadPreview" value="no"> No site preview</label></div></div>
+      </div>
+      <div class="ml-modal-foot"><button type="button" class="modal-btn secondary" id="resetSortFilters">Reset</button><button type="button" class="modal-btn primary" id="applySortFilters">Apply Filters</button></div>
+    </div>
+  </section>
+
+  <section class="ml-modal" id="stageModal" hidden aria-hidden="true" aria-labelledby="stageTitle">
+    <div class="ml-modal-card">
+      <div class="ml-modal-head">
+        <div><h2 id="stageTitle">Stage</h2><p>Filter your assigned leads by stage.</p></div>
+        <button type="button" class="modal-close" data-close-modal><i data-lucide="x"></i></button>
+      </div>
+      <div class="ml-modal-body"><div id="stageOptionGridPopup" class="ml-stage-card-grid"></div><div id="stageFollowUpFilters" class="ml-stage-followups" hidden><h3>Follow-up category</h3><div id="followUpOptionGrid" class="ml-followup-card-grid"></div></div></div>
+      <div class="ml-modal-foot">
+        <button type="button" class="modal-btn secondary" data-clear="stages">Clear</button>
+        <button type="button" class="modal-btn primary" data-apply-modal="stages">Apply Stages</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="ml-modal" id="tagsModal" hidden aria-hidden="true" aria-labelledby="tagsTitle">
+    <div class="ml-modal-card large">
+      <div class="ml-modal-head">
+        <div>
+          <h2 id="tagsTitle">Tags</h2>
+          <p>View all available tags and filter leads.</p>
+        </div>
+        <button type="button" class="modal-close" data-close-modal><i data-lucide="x"></i></button>
+      </div>
+      <div class="ml-modal-toolbar">
+        <label class="modal-search"><i data-lucide="search"></i><input id="tagSearchInput" type="search" placeholder="Search tags…" /></label>
+        <label class="modal-checkline"><input type="checkbox" id="tagSelectAll" /> <span>Select all</span></label>
+        <div class="mode-toggle" id="tagModeToggle">
+          <button type="button" class="is-active" data-mode="AND">AND</button>
+          <button type="button" data-mode="OR">OR</button>
+        </div>
+      </div>
+      <div class="ml-modal-body">
+        <div id="tagOptionGrid" class="modal-option-grid three-col"></div>
+      </div>
+      <div class="ml-modal-foot">
+        <button type="button" class="modal-btn secondary" data-clear="tags">Clear</button>
+        <button type="button" class="modal-btn primary" data-apply-modal="tags">Apply Tags</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="ml-modal" id="sourcesModal" hidden aria-hidden="true" aria-labelledby="sourcesTitle">
+    <div class="ml-modal-card large">
+      <div class="ml-modal-head">
+        <div>
+          <h2 id="sourcesTitle">Sources</h2>
+          <p>View all available sources and filter leads.</p>
+        </div>
+        <button type="button" class="modal-close" data-close-modal><i data-lucide="x"></i></button>
+      </div>
+      <div class="ml-modal-toolbar">
+        <label class="modal-search"><i data-lucide="search"></i><input id="sourceSearchInput" type="search" placeholder="Search sources…" /></label>
+        <label class="modal-checkline"><input type="checkbox" id="sourceSelectAll" /> <span>Select all</span></label>
+        <div class="mode-toggle" id="sourceModeToggle">
+          <button type="button" class="is-active" data-mode="AND">AND</button>
+          <button type="button" data-mode="OR">OR</button>
+        </div>
+      </div>
+      <div class="ml-modal-body">
+        <div id="sourceOptionGrid" class="modal-option-grid three-col"></div>
+      </div>
+      <div class="ml-modal-foot">
+        <button type="button" class="modal-btn secondary" data-clear="sources">Clear</button>
+        <button type="button" class="modal-btn primary" data-apply-modal="sources">Apply Sources</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="demo-data.js"></script><script src="demo-supabase.js"></script>
+  <script src="auth-guard.js?v=20261005-dark-mode"></script>
+  <script src="preview-resolver.js?v=20261012-unified"></script>
+<script src="my-leads.js?v=20261012-queue-icons-v1" defer></script>
+</body>
+</html>

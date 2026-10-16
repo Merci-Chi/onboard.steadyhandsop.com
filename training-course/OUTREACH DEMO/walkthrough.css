@@ -1,0 +1,50 @@
+/* Steady Hands: walkthrough overlays the ORIGINAL demo page. */
+html.sh-guided,html.sh-guided body{scroll-behavior:auto!important}
+#sh-training-shade{position:fixed;top:0;left:0;width:1px;height:1px;border-radius:14px;background:transparent;box-shadow:0 0 0 200vmax rgba(5,12,24,.76);z-index:2147481000;pointer-events:none;transition:top .18s,left .18s,width .18s,height .18s}
+.sh-training-target{outline:3px solid #60a5fa!important;outline-offset:5px!important;border-radius:12px!important}
+#sh-training-pointer{position:fixed;z-index:2147481250;min-width:25px;height:25px;border-radius:50%;background:#3389ff;color:white;display:grid;place-items:center;font:bold 13px system-ui;box-shadow:0 0 0 5px #3389ff3d;pointer-events:none}
+#sh-training-coach{position:fixed;z-index:2147481300;width:min(292px,calc(100vw - 24px));background:#fff;color:#172842;border:1px solid #dce7f7;border-radius:18px;padding:13px 14px;max-height:calc(100dvh - 24px);overflow-y:auto;box-shadow:0 24px 90px #0009;font:14px/1.52 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;box-sizing:border-box}
+#sh-training-coach *{box-sizing:border-box}#sh-training-coach header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px}#sh-training-coach .sh-kicker{font-size:11px;font-weight:900;letter-spacing:.08em;color:#3375c9}#sh-training-coach h2{font-size:16px;line-height:1.25;margin:0 0 8px;color:#102946}#sh-training-coach p{font-size:12px;line-height:1.42;margin:0 0 8px;color:#4c607a}#sh-training-coach .sh-action{padding:8px;border-radius:9px;background:#eaf3ff;color:#104581;font-weight:750;font-size:12px}#sh-training-coach .sh-progress{height:5px;background:#e6ebf3;border-radius:6px;overflow:hidden;margin-top:9px}#sh-training-coach .sh-progress>div{height:100%;background:#337cf3;transition:width .25s}#sh-training-coach button{padding:7px 9px;border:0;background:#e9eef6;color:#334c68;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700}#sh-training-coach button:hover{background:#d9e5f4}#sh-training-coach .sh-done{display:block;margin-top:12px;background:#1469cd;color:white;font-size:14px;padding:11px 14px}#sh-training-coach .sh-nametext{display:block;width:100%;padding:11px;border:1px solid #d2ddeb;border-radius:8px;margin:10px 0;font:inherit}#sh-training-coach .sh-indicator{font-size:11px;color:#63748a}
+#sh-training-dialog{position:fixed;z-index:2147481150;width:min(320px,calc(100vw - 24px));max-height:min(58dvh,440px);overflow:auto;background:#fff;color:#163151;padding:14px;border-radius:14px;box-shadow:0 15px 60px #0009;left:50%;top:50%;transform:translate(-50%,-50%);font:14px/1.5 system-ui}
+#sh-training-dialog h3{margin:0 0 10px;font-size:16px}#sh-training-dialog p{margin:8px 0}#sh-training-dialog button{background:#1068c9;border:0;border-radius:11px;padding:12px 14px;color:#fff;font-weight:750;cursor:pointer;margin:8px 4px 0 0}#sh-training-dialog .sh-dialog-close{float:right;background:#edf2f8;color:#294561;padding:5px 10px}#sh-training-dialog label{display:block;font-weight:700;margin:10px 0}#sh-training-dialog input,#sh-training-dialog select,#sh-training-dialog textarea{display:block;width:100%;border:1px solid #c9d7e8;border-radius:8px;padding:10px;font:inherit}#sh-training-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147481400;padding:12px 20px;color:white;background:#117647;border-radius:10px;box-shadow:0 10px 30px #0005;font-weight:750}
+.sh-guided #sh-training-coach,.sh-guided #sh-training-dialog{color-scheme:light}
+@media(max-width:650px){#sh-training-coach{padding:14px}#sh-training-coach h2{font-size:17px}#sh-training-coach p{font-size:13px}#sh-training-coach .sh-action{font-size:12px}}
+
+/* Spotlight remains clickable but only the guide determines what it does. */
+html.sh-guided a:not(.sh-training-target){cursor:default}
+#sh-training-dialog #sh-guide-close,#sh-training-dialog #sh-guide-save{position:relative;z-index:2147481200}
+
+#sh-training-coach .sh-guide-next{margin-top:14px;display:block;width:100%;padding:12px 16px;background:#176cce;color:#fff;font-size:14px;border-radius:11px}#sh-training-coach .sh-guide-next:disabled{opacity:.55;cursor:wait}
+
+/* Compact instructions and explicit tap-friendly actions. */
+#sh-training-coach header{gap:7px;margin-bottom:6px}#sh-training-coach .sh-kicker{font-size:9px}#sh-training-coach .sh-indicator{font-size:10px;margin-top:5px}#sh-training-coach .sh-guide-next{margin-top:9px;padding:9px 12px;font-size:12px}
+@media(max-width:650px){#sh-training-coach{width:min(252px,calc(100vw - 24px));padding:10px 11px}#sh-training-coach h2{font-size:14px}#sh-training-coach p{font-size:11px}#sh-training-coach .sh-action{font-size:11px}#sh-training-dialog{width:min(280px,calc(100vw - 24px))}}
+
+/* Responsive practice cards: keep action targets clear and touchable. */
+#sh-training-coach{transform:none;overscroll-behavior:contain;touch-action:pan-y;padding:11px 12px;max-height:min(44dvh,300px);width:min(268px,calc(100vw - 20px));box-shadow:0 14px 44px rgba(0,0,0,.35)}
+#sh-training-coach header{flex-wrap:wrap}
+#sh-training-coach button{min-height:36px;touch-action:manipulation}
+#sh-training-coach .sh-guide-next{min-height:42px}
+#sh-training-coach.sh-coach-tight{overflow:auto}
+#sh-training-dialog{left:50%;top:50%;max-height:min(55dvh,380px);overscroll-behavior:contain;touch-action:pan-y}
+#sh-training-dialog button{min-height:42px;touch-action:manipulation}
+#sh-training-coach:focus-within{scroll-margin-bottom:10px}
+@media(max-width:650px){
+ #sh-training-coach{width:min(238px,calc(100vw - 18px));padding:9px 10px;border-radius:13px;max-height: min(35dvh,235px);font-size:12px;line-height:1.34}
+ #sh-training-coach h2{font-size:13px;margin-bottom:4px}
+ #sh-training-coach p{font-size:11px;line-height:1.28;margin-bottom:5px}
+ #sh-training-coach .sh-action{font-size:10px;padding:6px}
+ #sh-training-coach .sh-indicator{font-size:9px}
+ #sh-training-coach .sh-progress{margin-top:6px}
+ #sh-training-dialog{max-width:calc(100vw - 20px);width:min(272px,calc(100vw - 20px));padding:11px}
+ #sh-training-dialog h3{font-size:14px}
+ #sh-training-pointer{width:22px;height:22px;min-width:22px;font-size:11px}
+}
+@media(max-height:550px){#sh-training-coach{max-height:34dvh}#sh-training-dialog{max-height:45dvh}}
+
+/* Training accessibility fix: all instructions and actions remain reachable. */
+#sh-training-coach{max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;scrollbar-width:thin;}
+#sh-training-coach.sh-coach-tight{max-height:calc(100dvh - 20px)!important;}
+#sh-training-dialog{max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;}
+#sh-training-coach .sh-guide-next,#sh-training-coach #sh-exit-training{position:relative;flex-shrink:0;}
+@media(max-width:650px){#sh-training-coach{width:min(270px,calc(100vw - 20px))!important;max-height:calc(100dvh - 16px)!important;}#sh-training-dialog{max-height:calc(100dvh - 16px)!important;}}
