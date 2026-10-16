@@ -11,7 +11,6 @@ try {
  else {
   const {data:permission,error:permissionError}=await supabase.from('team_permissions').select('role,active').eq('user_id',user.id).maybeSingle();
   if(permissionError||!permission?.active){message.textContent='Access requires an active Steady Hands team account.';}
-  else if(!user.user_metadata?.steadyhands_onboarding?.complete){location.replace('../index.html');}
   else {
    document.getElementById('trainingAccountName').textContent=user.email||'Team member';
    site.hidden=false;message.remove();
