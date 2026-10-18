@@ -11,3 +11,6 @@
 
 /* One scroll surface for the entire popup, including long country and area grids. */
 .questionnaire-popup{overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}
+
+/* Explicit display rules on buttons must not override their hidden state. */
+#questionnaire-entry [hidden],.questionnaire-popup [hidden]{display:none!important}

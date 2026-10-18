@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('../actions/hEi269a/action.js',import.meta.url),'utf8');
-async function run({status='assigned',user={id:'owner'},assignment=true}={}){
+async function run({status='assigned',user={id:'owner'},assignment=true,completeDuringOpen=false}={}){
  const calls=[],assets=[],message={textContent:''},button={hidden:true,disabled:false,events:{},addEventListener(k,v){this.events[k]=v}},body={innerHTML:'OLD SCREEN'};
+ const title={textContent:'Action Needed'},section={textContent:'ACTION NEEDED'};
  const supabase={};let redirected=null;
- const window={OutreachActions:{load:async()=>({assignment:assignment?{id:'one',status}:null})},OutreachQuestionnaire:{open:async options=>{calls.push(options);}}};
- const document={title:'',body,querySelectorAll:()=>[],getElementById:id=>id==='questionnaire-message'?message:id==='open-questionnaire'?button:null,createElement:tag=>({tag}),head:{appendChild(el){assets.push(el);el.onload?.();}}};
+ const window={OutreachActions:{load:async()=>({assignment:assignment?{id:'one',status}:null})},OutreachQuestionnaire:{open:async options=>{calls.push(options);if(completeDuringOpen)options.onComplete();}}};
+ const document={title:'',body,querySelectorAll:()=>[],getElementById:id=>id==='questionnaire-message'?message:id==='open-questionnaire'?button:id==='questionnaire-title'?title:id==='questionnaire-section'?section:null,createElement:tag=>({tag}),head:{appendChild(el){assets.push(el);el.onload?.();}}};
  const context={window,document,supabase,ensureHealthySession:async()=>({data:{session:user?{user}:null}}),location:{replace(url){redirected=url}}};vm.createContext(context);
  await vm.runInContext('(async()=>{'+source.replace(/^import .*;\n/m,'')+'})()',context);
- return {calls,assets,message,button,body,window,supabase,document,redirected};
+ return {calls,assets,message,button,body,window,supabase,document,redirected,title,section};
 }
 test('the legacy URL clears its previous screen and automatically opens the assigned popup',async()=>{
  const r=await run();assert.equal(r.calls.length,1);assert.equal(r.window.steadyHandsCRMClient,r.supabase);assert.equal(r.button.hidden,false);assert.match(r.message.textContent,/one question at a time/);assert.doesNotMatch(r.body.innerHTML,/OLD SCREEN|PDF|canvas|signature|agreement/i);assert.equal(r.document.title,'Questionnaire · Steady Hands');
@@ -27,5 +28,20 @@ test('signed-out visitors must sign in before opening the questionnaire',async()
 test('the exact old entry contains no PDF, signature, storage upload, or signing RPC code',async()=>{
  const html=await readFile(new URL('../actions/hEi269a/index.html',import.meta.url),'utf8');
  for(const text of [source,html])assert.doesNotMatch(text,/jspdf|html2canvas|application\/pdf|\.pdf|\.storage|\.upload\(|sh_prepare_signed_agreement|sh_finalize_signed_agreement|signature-name|<canvas|Download signed/i);
- assert.match(html,/action.js\?v=20261018-single-scroll/);
+ assert.match(html,/action.js\?v=20261018-completion-state/);
+});
+
+test('closing a completed questionnaire updates the page and prevents reopening',async()=>{
+ const r=await run();r.calls[0].onComplete();
+ assert.equal(r.title.textContent,'Questionnaire complete');assert.equal(r.section.textContent,'COMPLETED');
+ assert.equal(r.document.title,'Questionnaire complete · Steady Hands');assert(r.button.hidden);assert(r.button.disabled);
+ await r.button.events.click();assert.equal(r.calls.length,1);
+});
+test('completed records show the completion page immediately on reload',async()=>{
+ const r=await run({status:'completed'});assert.equal(r.title.textContent,'Questionnaire complete');
+ assert.equal(r.section.textContent,'COMPLETED');assert(r.button.hidden);assert(r.button.disabled);assert.equal(r.calls.length,0);
+});
+test('a completion callback during opening cannot be overwritten by the pending message',async()=>{
+ const r=await run({completeDuringOpen:true});assert.match(r.message.textContent,/No further action/);
+ assert(r.button.hidden);assert(r.button.disabled);assert.equal(r.title.textContent,'Questionnaire complete');
 });
