@@ -28,7 +28,7 @@ test('signed-out visitors must sign in before opening the questionnaire',async()
 test('the exact old entry contains no PDF, signature, storage upload, or signing RPC code',async()=>{
  const html=await readFile(new URL('../actions/hEi269a/index.html',import.meta.url),'utf8');
  for(const text of [source,html])assert.doesNotMatch(text,/jspdf|html2canvas|application\/pdf|\.pdf|\.storage|\.upload\(|sh_prepare_signed_agreement|sh_finalize_signed_agreement|signature-name|<canvas|Download signed/i);
- assert.match(html,/action.js\?v=20261018-completion-state/);
+ assert.match(html,/action.js\?v=20261018-select-start/);
 });
 
 test('closing a completed questionnaire updates the page and prevents reopening',async()=>{

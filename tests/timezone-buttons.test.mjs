@@ -105,3 +105,13 @@ test('added city areas retain valid timezone IDs and broad country coverage',asy
  assert(countries.filter(c=>c.areas.size>1).length>200);
  for(const country of countries)for(const area of country.areas.values())for(const zone of area.zones)assert.doesNotThrow(()=>new Intl.DateTimeFormat('en-US',{timeZone:zone.id}).format(new Date()),country.id+': '+area.label);
 });
+
+for(const basis of ['hourly','commission'])test(`no preset date ${basis} asks for and saves a weekday before submission`,async()=>{
+ const h=harness(basis);h.window.OutreachActions.load=async()=>({assignment:{id:'assigned-1',status:'assigned',choose_start_date:true},associate:{current_basis:basis,start_date:null}});
+ const saved=[];h.window.OutreachActions.extend=async(id,previous,next)=>{saved.push({id,previous,next});return next;};
+ await h.open();
+ if(basis==='hourly'){h.next();h.choose('path','hourly');h.next();h.node('hourly-sure').click();h.node('quota-ack').checked=true;h.next();}
+ assert.match(h.body.innerHTML,/Choose your start date/);assert.doesNotMatch(h.body.innerHTML,/Invalid Date|null/);
+ h.next();h.next();assert.match(h.body.innerHTML,/Monday, /);await h.next();assert.equal(saved[0].previous,null);assert.match(h.body.innerHTML,/Confirm your start date/);
+ h.next();await toPhone(h);h.choose('phone','needs_number');h.next();await tick();assert.equal(h.calls[0][1].startDate,saved[0].next);assert.match(h.body.innerHTML,/<dt>Start date/);
+});
