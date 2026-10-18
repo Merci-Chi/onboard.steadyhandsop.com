@@ -21,18 +21,17 @@ async function load(){
   if(health.error)throw health.error;
   const user=health.data?.session?.user;
   if(!user){location.replace('/login.html');return;}
-  // Use the existing required-action assignment source, scoped to this account.
-  // Do not infer an assignment from the existence of a public action page.
-  const {data,error}=await supabase.from('sh_associate_pause')
-   .select('action_code,status,signed_at,agreement_storage_path')
+  // Read the same per-user questionnaire assignments as Outreach and Admin.
+  const {data,error}=await supabase.from('outreach_action_assignments')
+   .select('id,status')
    .eq('user_id',user.id)
    .maybeSingle();
   if(error)throw error;
-  if(!data?.action_code||!/^[A-Za-z0-9_-]{7,50}$/.test(data.action_code)){empty();return;}
-  const complete=data.status==='active'&&!!data.signed_at&&!!data.agreement_storage_path;
-  const title=data.action_code==='hEi269a'?'Sales Associate Track Selection':'Required action';
+  if(!data?.id||!['assigned','completed'].includes(data.status)){empty();return;}
+  const complete=data.status==='completed';
+  const title='Associate Questionnaire';
   const link=make('a','assignment-link');
-  link.href='/actions/'+encodeURIComponent(data.action_code)+'/';
+  link.href='/actions/hEi269a/';
   const body=make('span');
   body.append(make('b','',title));
   body.append(make('small','',complete?'Completed':'Action needed'));
@@ -59,3 +58,4 @@ await load();
 supabase.auth.onAuthStateChange(event=>{
  if(event==='SIGNED_IN'||event==='SIGNED_OUT')setTimeout(load,0);
 });
+

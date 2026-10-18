@@ -26,29 +26,23 @@ async function render({user={id:'assigned-user'},row=null,error=null,healthError
 }
 test('required actions are scoped to the authenticated account',async()=>{
  const result=await render();
- assert.equal(result.calls[0].table,'sh_associate_pause');
+ assert.equal(result.calls[0].table,'outreach_action_assignments');
  assert.equal(result.calls[0].field,'user_id');
  assert.equal(result.calls[0].value,'assigned-user');
  assert.match(result.items.textContent,/Nothing is assigned/);
 });
-test('assigned required action opens its existing workflow',async()=>{
- const {items}=await render({row:{action_code:'hEi269a',status:'paused'}});
+test('assigned action opens the popup questionnaire entry',async()=>{
+ const {items}=await render({row:{id:'assignment-one',status:'assigned'}});
  assert.equal(items.children[0].href,'/actions/hEi269a/');
- assert.match(items.textContent,/Sales Associate Track SelectionAction needed/);
+ assert.match(items.textContent,/Associate QuestionnaireAction needed/);
 });
-test('only a finalized action is labeled completed',async()=>{
- for(const row of [
-  {action_code:'hEi269a',status:'active'},
-  {action_code:'hEi269a',status:'active',signed_at:'2026-10-18'},
-  {action_code:'hEi269a',status:'paused',signed_at:'2026-10-18',agreement_storage_path:'private/file.pdf'}
- ])assert.match((await render({row})).items.textContent,/Action needed/);
- assert.match((await render({row:{action_code:'hEi269a',status:'active',signed_at:'2026-10-18',agreement_storage_path:'private/file.pdf'}})).items.textContent,/Completed/);
+test('a completed questionnaire is labeled completed without any document fields',async()=>{
+ assert.match((await render({row:{id:'assignment-one',status:'completed'}})).items.textContent,/Completed/);
+ assert.match((await render({row:{id:'assignment-one',status:'assigned'}})).items.textContent,/Action needed/);
 });
-test('missing or malformed action codes never produce workflow links',async()=>{
- for(const action_code of [null,'','../../elsewhere','<script>']){
-  const {items}=await render({row:{action_code}});
-  assert.match(items.textContent,/Nothing is assigned/);
-  assert.equal(items.children[0].href,undefined);
+test('missing and cancelled assignments do not produce questionnaire links',async()=>{
+ for(const row of [null,{}, {id:'one',status:'cancelled'}]){
+  const {items}=await render({row});assert.match(items.textContent,/Nothing is assigned/);assert.equal(items.children[0].href,undefined);
  }
 });
 test('signed-out users are redirected without querying assignments',async()=>{
@@ -74,3 +68,4 @@ test('both dashboards reference the same styles and welcome links reach both',as
  }
  assert(home.includes('href="actions/"'));assert(home.includes('href="agreements/"'));
 });
+
