@@ -21,22 +21,33 @@ async function load(){
   if(health.error)throw health.error;
   const user=health.data?.session?.user;
   if(!user){location.replace('/login.html');return;}
-  // Read the same per-user questionnaire assignments as Outreach and Admin.
   const {data,error}=await supabase.from('outreach_action_assignments')
-   .select('id,status')
-   .eq('user_id',user.id)
-   .maybeSingle();
+   .select('id,status,assigned_at,completed_at')
+   .eq('user_id',user.id).in('status',['assigned','completed'])
+   .order('assigned_at',{ascending:false}).order('id',{ascending:false});
   if(error)throw error;
-  if(!data?.id||!['assigned','completed'].includes(data.status)){empty();return;}
-  const complete=data.status==='completed';
-  const title='Associate Questionnaire';
-  const link=make('a','assignment-link');
-  link.href='/actions/hEi269a/';
-  const body=make('span');
-  body.append(make('b','',title));
-  body.append(make('small','',complete?'Completed':'Action needed'));
-  link.append(body,make('span','arrow','→'));
-  items.replaceChildren(link);
+  const rows=(data||[]).filter(row=>row.id&&['assigned','completed'].includes(row.status));
+  if(!rows.length){empty();return;}
+  const links=rows.map(row=>{
+   const complete=row.status==='completed';
+   const link=make('a','assignment-link');
+   link.href='/actions/hEi269a/?assignment='+encodeURIComponent(row.id);
+   const body=make('span');
+   body.append(make('b','','Associate Questionnaire'));
+   body.append(make('small','',complete?'Completed':'Action needed'));
+   for(const [label,value] of [['Assigned',row.assigned_at],['Completed',row.completed_at]]){
+    if(!value)continue;
+    const date=new Date(value);
+    if(!Number.isFinite(date.getTime()))continue;
+    const line=make('small');
+    line.append(make('span','',label+' '));
+    const timestamp=make('time','',new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short'}).format(date));
+    timestamp.dateTime=value;line.append(timestamp);body.append(line);
+   }
+   link.append(body,make('span','arrow','→'));
+   return link;
+  });
+  items.replaceChildren(...links);
  }catch(error){
   console.error('Required action lookup:',error);
   items.textContent='Unable to load required actions. Please refresh or contact your administrator.';

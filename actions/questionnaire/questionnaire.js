@@ -98,7 +98,7 @@
   }
   async function open(options={}){
     if(busy)return;
-    const {assignment,associate}=await window.OutreachActions.load();
+    const {assignment,associate}=await window.OutreachActions.load(options.assignmentId);
     if(!assignment||assignment.status!=='assigned')throw new Error('This questionnaire must be assigned to your account and still awaiting a response.');
     ensureDialog();returnFocus=document.activeElement;onComplete=options.onComplete;
     state={assignmentId:assignment.id,chooseStartDate:assignment.choose_start_date===true,basis:associate.current_basis,path:associate.current_basis==='commission'?'commission':'',startDate:associate.start_date,quotaAcknowledged:false,weekday:1,localZone:Intl.DateTimeFormat().resolvedOptions().timeZone||zones[0][0],workZone:zones[0][0],start:540,hours:10,phoneSetup:'',phoneNumber:'',error:''};
