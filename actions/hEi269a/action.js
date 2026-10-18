@@ -20,7 +20,7 @@ async function initialize(){
   }
   await script('/actions/questionnaire/api.js?v=20261018-popup-only');
   await script('/actions/questionnaire/start-dates.js?v=20261018-popup-only');
-  await script('/actions/questionnaire/questionnaire.js?v=20261018-popup-only');
+  await script('/actions/questionnaire/questionnaire.js?v=20261018-world-timezones');
   const {assignment}=await window.OutreachActions.load();
   if(!assignment){message.textContent='No questionnaire is assigned to your account. Please contact your administrator.';return;}
   if(assignment.status==='completed'){message.textContent='Your questionnaire has been submitted to your administrator.';return;}
