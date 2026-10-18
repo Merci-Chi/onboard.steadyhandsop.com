@@ -18,9 +18,9 @@ async function initialize(){
   if(!document.getElementById('questionnaire-css')){
    const css=document.createElement('link');css.id='questionnaire-css';css.rel='stylesheet';css.href='/actions/questionnaire/css.css?v=20261018-popup-only';document.head.appendChild(css);
   }
-  await script('/actions/questionnaire/api.js?v=20261018-popup-only');
+  await script('/actions/questionnaire/api.js?v=20261018-phone-entry');
   await script('/actions/questionnaire/start-dates.js?v=20261018-popup-only');
-  await script('/actions/questionnaire/questionnaire.js?v=20261018-world-timezones');
+  await script('/actions/questionnaire/questionnaire.js?v=20261018-phone-entry');
   const {assignment}=await window.OutreachActions.load();
   if(!assignment){message.textContent='No questionnaire is assigned to your account. Please contact your administrator.';return;}
   if(assignment.status==='completed'){message.textContent='Your questionnaire has been submitted to your administrator.';return;}
