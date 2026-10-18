@@ -17,11 +17,11 @@ window.SteadyHandsStartDates = (() => {
     d.setUTCDate(Math.min(day,last));return d.toISOString().slice(0,10);
   }
   function options(day,current,today) {
-    parse(current);const end=limitDate(today);const out=[];
+    if(current)parse(current);const end=limitDate(today);const out=[];
     if(!Number.isInteger(day)||day<1||day>5)return out;
     for(let d=parse(today);d.toISOString().slice(0,10)<=end;d.setUTCDate(d.getUTCDate()+1)){
       const key=d.toISOString().slice(0,10);
-      if(d.getUTCDay()===day&&key>current)out.push(key);
+      if(d.getUTCDay()===day&&(!current||key>current))out.push(key);
     }
     return out;
   }

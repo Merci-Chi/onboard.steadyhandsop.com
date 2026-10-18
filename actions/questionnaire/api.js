@@ -11,7 +11,7 @@
   async function load() {
     const {client,userId} = await session();
     const {data:assignment,error} = await client.from('outreach_action_assignments')
-      .select('id,user_id,status,assigned_at,completed_at')
+      .select('id,user_id,status,assigned_at,completed_at,choose_start_date')
       .eq('user_id',userId).in('status',['assigned','completed']).maybeSingle();
     if (error) throw new Error('Action Needed is unavailable. Please contact your administrator.');
     if (!assignment) return {assignment:null};
@@ -30,7 +30,7 @@
       p_shift_start_minutes:state.start,
       p_preferred_weekly_hours:state.hours,
       p_quota_acknowledged:state.quotaAcknowledged === true,
-      p_confirmed_start_date:state.path==='hourly' ? state.startDate : null,
+      p_confirmed_start_date:state.path==='hourly'||state.chooseStartDate ? state.startDate : null,
       p_phone_setup:state.phoneSetup,
       p_us_phone_number:state.phoneSetup==='needs_number' ? null : state.phoneNumber
     });
