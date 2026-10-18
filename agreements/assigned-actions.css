@@ -1,0 +1,14 @@
+
+.assignments-home #missing,.assignments-home #status,.assignments-home #pdf,.assignments-home #pdfhint{display:none!important}
+.assignments-home .paper{min-height:330px}.assignments-home .paperbar small{display:none}
+.assignment-dashboard{padding:20px}.assignment-dashboard [hidden]{display:none!important}
+.assignment-dashboard .empty{min-height:235px;display:grid;place-content:center;text-align:center;color:#687a90;gap:6px}
+.assignment-dashboard .empty svg{margin:auto;color:#96a9bd}
+.assignment-dashboard .empty strong{font-size:19px;color:#183452}
+.assignment-dashboard .assignment-link{display:flex;align-items:center;justify-content:space-between;gap:14px;text-decoration:none;border:1px solid #d4e2f0;border-radius:12px;padding:16px;color:#142b48;margin-bottom:10px;background:#f8fbff}
+.assignment-dashboard .assignment-link:hover,.assignment-dashboard .assignment-link:focus-visible{border-color:#267ac8;background:#eaf4ff}
+.assignment-dashboard .assignment-link b{display:block}.assignment-dashboard .assignment-link small{color:#687a90;display:block;margin-top:4px;overflow-wrap:anywhere}
+.assignment-dashboard .assignment-link .arrow{color:#1269b8;font-weight:800;font-size:24px}
+#homeWelcome .home-notice{padding:18px;border:1px solid #d4e2f0;background:#f5f9ff;border-radius:13px}
+#homeWelcome a{display:inline-block;margin-top:13px}
+.top-actions{display:flex;align-items:center;gap:10px}.top-actions .nav-back,.top-actions .nav-signout{display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border:1px solid #6b88ab;border-radius:10px;color:#fff;background:transparent;font:700 14px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}.top-actions .nav-back:hover,.top-actions .nav-signout:hover{background:#24466b}@media(max-width:520px){.top-actions{gap:6px}.top-actions .nav-back,.top-actions .nav-signout{font-size:12px;padding:8px}.brand img:nth-child(2){max-width:33vw}}

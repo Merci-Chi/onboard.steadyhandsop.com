@@ -14,7 +14,7 @@ async function start(){
   const {data,error}=await supabase.auth.getUser();
   if(error||!data.user){location.replace('login.html');return;}
   email.textContent=data.user.email||'';
-  area.innerHTML=`<p class="eyebrow">YOUR TEAM WORKSPACE</p><h1>Welcome to Steady Hands.</h1><p class="lead">Open your onboarding, continue training, or review your assigned agreement actions.</p><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:25px"><a class="primary-button" href="onboarding.html" style="text-decoration:none;text-align:center">Open Onboarding →</a><a class="secondary-button" href="training.html" style="text-decoration:none;text-align:center">Open Training →</a><a class="secondary-button" href="agreements/" style="text-decoration:none;text-align:center">Agreement Actions →</a></div>`;
+  area.innerHTML=`<p class="eyebrow">YOUR TEAM WORKSPACE</p><h1>Welcome to Steady Hands.</h1><p class="lead">Open your onboarding, continue training, or review your assigned agreements and actions.</p><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:25px"><a class="primary-button" href="onboarding.html" style="text-decoration:none;text-align:center">Open Onboarding →</a><a class="secondary-button" href="training.html" style="text-decoration:none;text-align:center">Open Training →</a><a class="secondary-button" href="agreements/" style="text-decoration:none;text-align:center">Agreement Actions →</a><a class="secondary-button" href="actions/" style="text-decoration:none;text-align:center">Action Needed →</a></div>`;
   if(status)status.textContent='';
   loading.hidden=true;loading.style.display='none';
   content.hidden=false;

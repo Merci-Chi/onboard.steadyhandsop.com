@@ -1,0 +1,76 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+
+const source=await readFile(new URL('../actions/assigned-actions.js',import.meta.url),'utf8');
+class Element{
+ constructor(){this.children=[];this._text='';this.events={};}
+ set textContent(value){this._text=value;this.children=[];}
+ get textContent(){return this._text+this.children.map(x=>x.textContent).join('');}
+ append(...children){this.children.push(...children);}
+ replaceChildren(...children){this._text='';this.children=children;}
+ addEventListener(name,callback){this.events[name]=callback;}
+}
+async function render({user={id:'assigned-user'},row=null,error=null,healthError=null,signoutError=null}={}){
+ const items=new Element(),button=new Element(),calls=[];
+ let redirect=null,authListener;
+ const document={getElementById:id=>id==='assignmentItems'?items:button,createElement:()=>new Element()};
+ const supabase={from:table=>({select:fields=>({eq:(field,value)=>({maybeSingle:async()=>{
+  calls.push({table,fields,field,value});return {data:row,error};
+ }})})}),auth:{onAuthStateChange:callback=>{authListener=callback;},signOut:async()=>({error:signoutError})}};
+ const context={document,supabase,ensureHealthySession:async()=>({data:{session:user?{user}:null},error:healthError}),location:{replace:url=>{redirect=url;}},console:{error(){}},setTimeout:callback=>callback()};
+ vm.createContext(context);
+ await vm.runInContext('(async()=>{'+source.replace(/^import .*;\n/,'')+'})()',context);
+ return {items,button,calls,get redirect(){return redirect;},authListener};
+}
+test('required actions are scoped to the authenticated account',async()=>{
+ const result=await render();
+ assert.equal(result.calls[0].table,'sh_associate_pause');
+ assert.equal(result.calls[0].field,'user_id');
+ assert.equal(result.calls[0].value,'assigned-user');
+ assert.match(result.items.textContent,/Nothing is assigned/);
+});
+test('assigned required action opens its existing workflow',async()=>{
+ const {items}=await render({row:{action_code:'hEi269a',status:'paused'}});
+ assert.equal(items.children[0].href,'/actions/hEi269a/');
+ assert.match(items.textContent,/Sales Associate Track SelectionAction needed/);
+});
+test('only a finalized action is labeled completed',async()=>{
+ for(const row of [
+  {action_code:'hEi269a',status:'active'},
+  {action_code:'hEi269a',status:'active',signed_at:'2026-10-18'},
+  {action_code:'hEi269a',status:'paused',signed_at:'2026-10-18',agreement_storage_path:'private/file.pdf'}
+ ])assert.match((await render({row})).items.textContent,/Action needed/);
+ assert.match((await render({row:{action_code:'hEi269a',status:'active',signed_at:'2026-10-18',agreement_storage_path:'private/file.pdf'}})).items.textContent,/Completed/);
+});
+test('missing or malformed action codes never produce workflow links',async()=>{
+ for(const action_code of [null,'','../../elsewhere','<script>']){
+  const {items}=await render({row:{action_code}});
+  assert.match(items.textContent,/Nothing is assigned/);
+  assert.equal(items.children[0].href,undefined);
+ }
+});
+test('signed-out users are redirected without querying assignments',async()=>{
+ const result=await render({user:null});
+ assert.equal(result.redirect,'/login.html');assert.equal(result.calls.length,0);
+});
+test('query and session failures are visible instead of an empty assignment list',async()=>{
+ for(const options of [{error:{message:'Denied'}},{healthError:{message:'Expired'}}]){
+  const {items}=await render(options);assert.match(items.textContent,/Unable to load required actions/);
+ }
+});
+test('sign-out succeeds or exposes a retryable failure',async()=>{
+ const success=await render();await success.button.events.click();assert.equal(success.redirect,'/login.html');
+ const failure=await render({signoutError:{message:'Network'}});await failure.button.events.click();
+ assert.equal(failure.button.disabled,false);assert.match(failure.items.textContent,/Unable to sign out/);
+});
+test('both dashboards reference the same styles and welcome links reach both',async()=>{
+ const [home,agreements,actions]=await Promise.all(['../index.html','../agreements/index.html','../actions/index.html'].map(file=>readFile(new URL(file,import.meta.url),'utf8')));
+ for(const html of [agreements,actions]){
+  assert(html.includes('href="/agreements/agreement.css"'));
+  assert(html.includes('href="/agreements/assigned-actions.css"'));
+  for(const cls of ['class="layout"','class="panel"','class="paper"','class="paperbar"'])assert(html.includes(cls));
+ }
+ assert(home.includes('href="actions/"'));assert(home.includes('href="agreements/"'));
+});
