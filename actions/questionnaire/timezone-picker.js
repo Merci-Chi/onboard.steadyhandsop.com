@@ -102,7 +102,11 @@
         else{value.zone=id;value.confirmed=true;}
         onChange({...value});render(true);
       });
-      if(focus)host.querySelector('#zone-heading').focus();
+      if(focus){
+        host.querySelector('#zone-heading').focus({preventScroll:true});
+        const popup=host.closest('dialog');
+        if(popup)popup.scrollTop=0;
+      }
     }
     onChange({...value});render();
   }
