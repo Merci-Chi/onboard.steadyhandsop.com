@@ -14,7 +14,7 @@ async function run({status='assigned',user={id:'owner'},assignment=true}={}){
 }
 test('the legacy URL clears its previous screen and automatically opens the assigned popup',async()=>{
  const r=await run();assert.equal(r.calls.length,1);assert.equal(r.window.steadyHandsCRMClient,r.supabase);assert.equal(r.button.hidden,false);assert.match(r.message.textContent,/one question at a time/);assert.doesNotMatch(r.body.innerHTML,/OLD SCREEN|PDF|canvas|signature|agreement/i);assert.equal(r.document.title,'Questionnaire · Steady Hands');
- assert.deepEqual(r.assets.filter(x=>x.tag==='script').map(x=>x.src.split('?')[0]),['/actions/questionnaire/api.js','/actions/questionnaire/start-dates.js','/actions/questionnaire/questionnaire.js']);
+ assert.deepEqual(r.assets.filter(x=>x.tag==='script').map(x=>x.src.split('?')[0]),['/actions/questionnaire/api.js','/actions/questionnaire/start-dates.js','/actions/questionnaire/timezone-picker.js','/actions/questionnaire/questionnaire.js']);
  r.calls[0].onComplete();assert(r.button.hidden);assert.match(r.message.textContent,/submitted/);
 });
 test('completed or unassigned records never open or create a document',async()=>{
@@ -27,5 +27,5 @@ test('signed-out visitors must sign in before opening the questionnaire',async()
 test('the exact old entry contains no PDF, signature, storage upload, or signing RPC code',async()=>{
  const html=await readFile(new URL('../actions/hEi269a/index.html',import.meta.url),'utf8');
  for(const text of [source,html])assert.doesNotMatch(text,/jspdf|html2canvas|application\/pdf|\.pdf|\.storage|\.upload\(|sh_prepare_signed_agreement|sh_finalize_signed_agreement|signature-name|<canvas|Download signed/i);
- assert.match(html,/action.js\?v=20261018-phone-entry/);
+ assert.match(html,/action.js\?v=20261018-continent-buttons/);
 });
