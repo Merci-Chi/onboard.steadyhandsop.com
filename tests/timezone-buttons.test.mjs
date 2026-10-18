@@ -85,3 +85,23 @@ test('timezone picker offers every country under a continent and uses readable G
  assert.match(picker.timezoneLabel('Asia/Kathmandu',new Date('2026-10-19T00:00:00Z')),/GMT\+5:45/);
  assert.match(picker.timezoneLabel('America/Los_Angeles',new Date('2026-01-19T00:00:00Z')),/GMT-8/);
 });
+
+test('single-timezone countries offer common cities as separate area buttons',async()=>{
+ const h=harness();await h.open();const countries=h.window.SteadyHandsTimezonePicker.catalog('UTC');
+ for(const [code,names,zone] of [
+  ['EG',['Cairo','Alexandria','Giza','Port Said','Suez'],'Africa/Cairo'],
+  ['DZ',['Algiers','Oran','Constantine','Annaba','Blida'],'Africa/Algiers'],
+  ['IN',['Mumbai','Delhi','Bengaluru','Chennai'],'Asia/Kolkata'],
+  ['PH',['Manila','Cebu City','Davao','Makati'],'Asia/Manila']
+ ]){
+  const country=countries.find(c=>c.id===code);assert(country.areas.size>=8,code);
+  for(const name of names){assert(country.areas.has(name),code+': '+name);assert(country.areas.get(name).zones.some(z=>z.id===zone));}
+ }
+ assert.equal(countries.find(c=>c.id==='US').areas.size,51);
+});
+
+test('added city areas retain valid timezone IDs and broad country coverage',async()=>{
+ const h=harness();await h.open();const countries=h.window.SteadyHandsTimezonePicker.catalog('UTC');
+ assert(countries.filter(c=>c.areas.size>1).length>200);
+ for(const country of countries)for(const area of country.areas.values())for(const zone of area.zones)assert.doesNotThrow(()=>new Intl.DateTimeFormat('en-US',{timeZone:zone.id}).format(new Date()),country.id+': '+area.label);
+});
