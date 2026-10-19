@@ -38,6 +38,22 @@
       if(!areas.has(area))areas.set(area,{id:area,label:area,zones:[]});
       areas.get(area).zones.push({id:zone,label:zone.split('/').slice(1).join(' / ').replaceAll('_',' ')});
     }
+    const geographic=window.SteadyHandsTimezoneAreas;
+    if(!geographic?.regions || !geographic?.zones)throw Error('Location options could not load. Refresh the page and try again.');
+    // Add geographic subdivisions even when several share one timezone. Retain
+    // existing reference areas/IDs so saved questionnaire selections still work.
+    for(const [code,label,zoneIndexes,inferred] of geographic.regions){
+      const country=countries.get(code.split('.')[0]);
+      if(!country)continue;
+      const zones=zoneIndexes.map(index=>geographic.zones[index]).filter(canonical)
+        .map(id=>({id,label:id.split('/').slice(1).join(' / ').replaceAll('_',' ')}));
+      if(!zones.length)continue;
+      const existing=[...country.areas.values()].find(area=>area.label===label);
+      if(existing){
+        const ids=new Set(existing.zones.map(z=>z.id));
+        existing.zones.push(...zones.filter(z=>!ids.has(z.id)));
+      }else country.areas.set(label,{id:label,label,zones,inferred});
+    }
     const us=countries.get('US');
     us.areas=new Map(Object.entries(usStates).map(([name,ids])=>[name,{id:name,label:name,zones:ids.map(id=>id.startsWith('Pacific/')?id:'America/'+id).filter(canonical).map(id=>({id,label:id.split('/').slice(1).join(' / ').replaceAll('_',' ')}))}]));
     // A country's cities remain separate choices even when they share one clock rule.
@@ -55,8 +71,8 @@
     return [...countries.values()].sort((a,b)=>a.label.localeCompare(b.label));
   }
   function locate(countries,selected){
-    for(const country of countries)for(const area of country.areas.values()){
-      const zone=area.zones.find(z=>z.id===selected||canonical(z.id)===canonical(selected));
+    for(const exact of [true,false])for(const country of countries)for(const area of country.areas.values()){
+      const zone=area.zones.find(z=>exact?z.id===selected:canonical(z.id)===canonical(selected));
       if(zone)return {continent:country.continent,country:country.id,area:area.id,zone:zone.id};
     }
     return {continent:'',country:'',area:'',zone:''};
@@ -92,7 +108,17 @@
       const lists={continent:continents.map(([id,label])=>({id,label})),country:countries.filter(c=>c.continent===value.continent),area:areas,timezone:[...grouped.values()]};
       const index=steps.findIndex(([id])=>id===active);
       const enabled={continent:true,country:!!value.continent,area:!!country,timezone:!!area};
-      host.innerHTML=`<p class="zone-intro">Pick your location in four quick steps.</p><nav class="zone-progress" aria-label="Timezone selection steps">${steps.map(([id,label],i)=>`<button type="button" class="zone-stage ${active===id?'is-active':''}" data-step="${id}" ${enabled[id]?'':'disabled'} ${active===id?'aria-current="step"':''}><span>${i+1}</span>${label}</button>`).join('')}</nav><div class="zone-context">${[continents.find(([id])=>id===value.continent)?.[1],country?.label,area?.label].filter(Boolean).map(esc).join(' · ')}</div>${active==='area'?'<small class="help zone-area-help">Choose your city or nearest area. Nearby cities may share the same timezone.</small>':''}<h2 class="zone-heading" id="zone-heading" tabindex="-1">${index+1}. Choose your ${steps[index][1].toLowerCase()}</h2><div class="zone-button-grid" role="group" aria-labelledby="zone-heading">${lists[active].map(item=>`<button type="button" class="zone-card ${item.id===(active==='timezone'?value.zone:value[active])?'is-selected':''}" data-kind="${active}" data-value="${esc(item.id)}" aria-pressed="${item.id===(active==='timezone'?value.zone:value[active])}"><strong>${esc(item.label)}</strong>${active==='timezone'?`<small>${esc(item.locations.join(' · '))}</small>`:''}</button>`).join('')}</div><input type="hidden" id="local-zone" value="${esc(value.zone)}"><small class="help" id="zone-selection-status" role="status">${value.zone?`Selected: ${esc(timezoneLabel(value.zone,reference))}.`:'Select a timezone to continue.'}</small>${active==='timezone'?'<small class="help">GMT offset is for your scheduled week; daylight saving changes are handled automatically.</small>':''}`;
+      host.innerHTML=`<p class="zone-intro">Pick your location in four quick steps.</p><nav class="zone-progress" aria-label="Timezone selection steps">${steps.map(([id,label],i)=>`<button type="button" class="zone-stage ${active===id?'is-active':''}" data-step="${id}" ${enabled[id]?'':'disabled'} ${active===id?'aria-current="step"':''}><span>${i+1}</span>${label}</button>`).join('')}</nav><div class="zone-context">${[continents.find(([id])=>id===value.continent)?.[1],country?.label,area?.label].filter(Boolean).map(esc).join(' · ')}</div><h2 class="zone-heading" id="zone-heading" tabindex="-1">${index+1}. Choose your ${steps[index][1].toLowerCase()}</h2>${active==='area'?'<label class="zone-search" for="zone-area-search">Find your state / area<input type="search" id="zone-area-search" placeholder="Search states, provinces or areas" autocomplete="off"></label>':''}<div class="zone-button-grid" role="group" aria-labelledby="zone-heading">${lists[active].map(item=>`<button type="button" class="zone-card ${item.id===(active==='timezone'?value.zone:value[active])?'is-selected':''}" data-kind="${active}" data-value="${esc(item.id)}" aria-pressed="${item.id===(active==='timezone'?value.zone:value[active])}"><strong>${esc(item.label)}</strong>${active==='timezone'?`<small>${esc(item.locations.join(' · '))}</small>`:''}</button>`).join('')}</div>${active==='area'?'<p id="zone-area-empty" class="help" role="status" hidden>No matching areas. Try another name.</p><small class="help zone-attribution">Area names and timezone mappings: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</small>':''}<input type="hidden" id="local-zone" value="${esc(value.zone)}"><small class="help" id="zone-selection-status" role="status">${value.zone?`Selected: ${esc(timezoneLabel(value.zone,reference))}.`:'Select a timezone to continue.'}</small>${active==='timezone'?'<small class="help">GMT offset is for your scheduled week; daylight saving changes are handled automatically.</small>':''}`;
+      const search=host.querySelector('#zone-area-search');
+      if(search)search.addEventListener('input',()=>{
+        const normalize=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().trim();
+        const query=normalize(search.value);let visible=0;
+        for(const button of host.querySelectorAll('.zone-card')){
+          button.hidden=!normalize(button.textContent).includes(query);
+          if(!button.hidden)visible++;
+        }
+        host.querySelector('#zone-area-empty').hidden=visible>0;
+      });
       for(const button of host.querySelectorAll('[data-step]'))button.addEventListener('click',()=>{active=button.dataset.step;render(true);});
       for(const button of host.querySelectorAll('.zone-card'))button.addEventListener('click',()=>{
         const id=button.dataset.value;
@@ -102,11 +128,7 @@
         else{value.zone=id;value.confirmed=true;}
         onChange({...value});render(true);
       });
-      if(focus){
-        host.querySelector('#zone-heading').focus({preventScroll:true});
-        const popup=host.closest('dialog');
-        if(popup)popup.scrollTop=0;
-      }
+      if(focus)host.querySelector('#zone-heading').focus();
     }
     onChange({...value});render();
   }

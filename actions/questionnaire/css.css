@@ -14,3 +14,5 @@
 
 /* Explicit display rules on buttons must not override their hidden state. */
 #questionnaire-entry [hidden],.questionnaire-popup [hidden]{display:none!important}
+
+.zone-search{display:block;margin:0 0 14px;font-size:13px;font-weight:700;color:var(--navy)}.zone-search input{display:block;width:100%;margin-top:7px;border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff;color:var(--navy);font:inherit;font-weight:400;box-sizing:border-box}.zone-card[hidden]{display:none}.zone-attribution{font-size:11px!important}.zone-attribution a{color:inherit}

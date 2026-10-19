@@ -15,7 +15,7 @@
 <button id="submit" class="primary" type="submit">Accept & Sign Agreement</button></form>
 <section id="complete" hidden><div class="checkmark">✓</div><h2 id="completeTitle">Agreement signed</h2><p id="completeInfo">Your agreement has been submitted and recorded. You can download the signed copy here.</p><button id="download" class="primary" type="button">Download signed PDF</button><p><a class="outline link" href="/agreements/">View all agreements</a></p><p class="tip" id="completeTip">If you need a correction, contact your administrator. Your saved signature cannot be edited from this page.</p></section>
 </section><aside class="paper"><div class="paperbar"><b id="rightTitle">Assigned actions</b><small>PDF · original terms unchanged</small></div><div id="assignedDashboard" class="assignment-dashboard" hidden><div id="assignmentItems" aria-live="polite"></div></div><iframe id="pdf" title="Assigned agreement PDF" loading="lazy"></iframe><p id="pdfhint">The agreement will appear after you sign in.</p></aside></div></main>
-<footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261016-transparent-overlays"></script><script type="module" src="/agreements/assigned-actions.js?v=20261016-direct-assignment"></script><script type="module">
+<footer>Steady Hands LLC · Private associate agreement · <span id="clock"></span></footer><script type="module" src="/agreements/agreement.js?v=20261019-auto-resume"></script><script type="module" src="/agreements/assigned-actions.js?v=20261016-direct-assignment"></script><script type="module">
 import {supabase} from '/supabase-client.js?v=20261015-reliability';
 const back=document.getElementById('agreement-back');
 const code=new URLSearchParams(location.search).get('code')||location.pathname.split('/').filter(Boolean).slice(1)[0]||'';
@@ -25,7 +25,7 @@ document.getElementById('agreement-signout')?.addEventListener('click',async()=>
  try{const {error}=await supabase.auth.signOut();if(error)throw error;location.replace('/login.html')}
  catch(error){button.disabled=false;button.textContent='Sign out';alert('Unable to sign out: '+(error.message||error))}
 });
-</script></body></html>
+</script><script type="module" src="/outreach-return.js?v=20261019-auto-resume"></script></body></html>
 
 
 
