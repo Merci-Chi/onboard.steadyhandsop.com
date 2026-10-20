@@ -102,6 +102,8 @@
   }
 
   async function maybePromptDeviceNotifications() {
+    // The guided demo must not request production device permissions.
+    if (window.SH_GUIDED_DEMO_ACTIVE || sessionStorage.getItem('sh-demo-walkthrough-20261013')) return;
     const PROMPTED_KEY = 'steadyhands-device-notifications-prompted';
     const ENABLED_KEY = 'steadyhands-setting-device-notifications';
 
