@@ -48,3 +48,9 @@ html.sh-guided a:not(.sh-training-target){cursor:default}
 #sh-training-dialog{max-height:calc(100dvh - 24px)!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;}
 #sh-training-coach .sh-guide-next,#sh-training-coach #sh-exit-training{position:relative;flex-shrink:0;}
 @media(max-width:650px){#sh-training-coach{width:min(270px,calc(100vw - 20px))!important;max-height:calc(100dvh - 16px)!important;}#sh-training-dialog{max-height:calc(100dvh - 16px)!important;}}
+
+/* Permission requests should never overlay the guided training. */
+html.sh-guided .device-notification-popup-overlay{display:none!important}
+/* Keep the guided coach above and separate from highlighted controls. */
+#sh-training-coach{max-width:calc(100vw - 20px);contain:layout}
+#sh-training-shade{transition:none}
